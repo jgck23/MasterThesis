@@ -146,24 +146,30 @@ def get_epochs():
 
 def load_data():
     import scipy.io
+    import glob
+    while True:
+        try:
+            userinput= input("Enter the name of the file you want to create a model for : ")
+            # Load the .mat file
+            mat_file = glob.glob('**/'+str(userinput)+'.mat', recursive=True)
+            if len(mat_file) > 1:
+                raise ValueError("Multiple files found")
 
-    # Load the .mat file
-    mat = scipy.io.loadmat('/path/to/your/file.mat')
-
-    # Print the keys of the dictionary
-    print(mat.keys())
-
-    # Assuming the data is stored in a variable named 'data' in the .mat file
-    data = mat['data']
-
-    # Convert the data to a pandas DataFrame
-    df = pd.DataFrame(data)
-
-    # Save the DataFrame to a CSV file
-    df.to_csv('/path/to/save/your/file.csv', index=False)
-
-    # Return the DataFrame
-    return df
+            mat = scipy.io.loadmat(mat_file[0]) 
+            # Print the keys of the dictionary
+            print(mat.keys())
+            # Assuming the data is stored in a variable named 'data' in the .mat file
+            data = mat['learnerMatrix']
+            # Convert the data to a pandas DataFrame
+            df = pd.DataFrame(data)
+            return df
+        except FileNotFoundError:
+            print("File not found")
+            pass
+        except ValueError:
+            print("Invalid input")
+            pass
 
 if __name__ == "__main__":
     print("Test_BA_Data.py is being run directly")
+    main()
