@@ -12,16 +12,12 @@ import matplotlib.pyplot as plt
 
 def main():
 
-    #get number of epochs
+    #get and set number of epochs to train the model
     epochs = get_epochs()
-
-
-    #set epochs
-    epochs = 50
-
+    epochs = epochs
+    
     # Load the data
-    data_train = pd.read_csv('new_train.csv', sep=';')
-    data_test = pd.read_csv('new_test.csv', sep=';')
+    data=load_data()
 
     # Split the data into features and target
     X = data_train.iloc[:, :-1].values  # All columns except the last one
@@ -147,6 +143,27 @@ def get_epochs():
             return int(input("Enter the number of epochs: "))
         except ValueError:
             pass
+
+def load_data():
+    import scipy.io
+
+    # Load the .mat file
+    mat = scipy.io.loadmat('/path/to/your/file.mat')
+
+    # Print the keys of the dictionary
+    print(mat.keys())
+
+    # Assuming the data is stored in a variable named 'data' in the .mat file
+    data = mat['data']
+
+    # Convert the data to a pandas DataFrame
+    df = pd.DataFrame(data)
+
+    # Save the DataFrame to a CSV file
+    df.to_csv('/path/to/save/your/file.csv', index=False)
+
+    # Return the DataFrame
+    return df
 
 if __name__ == "__main__":
     print("Test_BA_Data.py is being run directly")
