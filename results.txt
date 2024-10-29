@@ -1,0 +1,12 @@
+
+Number of hidden layers: 2
+Number of neurons in hidden layers: 256, 128
+Activation function: LeakyReLU
+Kernel initializer: HeNormal
+Kernel regularizer: l1
+Average Validation Loss: 0.7618264555931091
+Average RMSE: 0.9734108735616148
+Best Fold according to loss: 2
+Best Fold according to RMSE: 2
+Test Loss: 0.5905627608299255
+Test RMSE: 4.0411081648216856

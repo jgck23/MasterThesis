@@ -1,7 +1,11 @@
 # Default ignored files
 *.keras
 et.csv
-*.numbers
 Test_BA_Data_LSTM.py
 CNN.py
 .DS_Store
+/wandb
+
+# Ignore data files
+*.mat
+*.numbers
