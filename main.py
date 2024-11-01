@@ -69,19 +69,19 @@ def main():
             # track hyperparameters and run metadata with wandb.config
             config={
                 "name_mat": name_mat,
-                "layer_1": 1024,
-                "activation_1": "relu", # relu, sigmoid, tanh, softmax, softplus, softsign, selu, elu, exponential
+                "layer_1": 10,
+                "activation_1": "selu", # relu, sigmoid, tanh, softmax, softplus, softsign, selu, elu, exponential
                 "kernel_initializer_1": "HeNormal", # HeNormal, GlorotNormal, LecunNormal, HeUniform, GlorotUniform, LecunUniform
-                "dropout": 0.25,  # random.uniform(0.01, 0.80),
-                "layer_2": 1024,
+                "dropout": 0.2,  # random.uniform(0.01, 0.80),
+                "layer_2": 100,
                 "kernel_initializer_2": "HeNormal", # HeNormal, GlorotNormal, LecunNormal, HeUniform, GlorotUniform, LecunUniform
-                "activation_2": "relu", # relu, sigmoid, tanh, softmax, softplus, softsign, selu, elu, exponential
-                "layer_3": 512,
+                "activation_2": "selu", # relu, sigmoid, tanh, softmax, softplus, softsign, selu, elu, exponential
+                "layer_3": 100,
                 "kernel_initializer_3": "HeNormal", # HeNormal, GlorotNormal, LecunNormal, HeUniform, GlorotUniform, LecunUniform
-                "activation_3": "relu", # relu, sigmoid, tanh, softmax, softplus, softsign, selu, elu, exponential
-                "optimizer": "adam", # adam, sgd, rmsprop, adagrad, adadelta, adamax, nadam, adamw
-                "loss": "mean_absolute_error", # mean_squared_error, mean_absolute_error, mean_absolute_percentage_error, mean_squared_logarithmic_error, cosine_similarity, huber, logcosh, poisson, kullback_leibler_divergence, hinge, squared_hinge, categorical_hinge, binary_crossentropy, kullback_leibler_divergence, poisson, cosine_proximity, is_categorical_crossentropy, sparse_categorical_crossentropy, binary_accuracy, categorical_accuracy, sparse_categorical_accuracy, top_k_categorical_accuracy, sparse_top_k_categorical_accuracy, mean_absolute_error, mean_absolute_percentage_error, mean_squared_error, mean_squared_logarithmic_error, squared_hinge, hinge, categorical_hinge, logcosh, huber, cosine_similarity, cosine_proximity, poisson, kl_divergence, kullback_leibler_divergence, sparse_categorical_crossentropy, binary_crossentropy, is_categorical_crossentropy, sparse_categorical_crossentropy, categorical_crossentropy, sparse_categorical_crossentropy, binary_accuracy, categorical_accuracy, sparse_categorical_accuracy, top_k_categorical_accuracy, sparse_top_k_categorical_accuracy
-                "epoch": 100,
+                "activation_3": "selu", # relu, sigmoid, tanh, softmax, softplus, softsign, selu, elu, exponential
+                "optimizer": "adamw", # adam, sgd, rmsprop, adagrad, adadelta, adamax, nadam, adamw
+                "loss": "mean_squared_error", # mean_squared_error, mean_absolute_error, mean_absolute_percentage_error, mean_squared_logarithmic_error, cosine_similarity, huber, logcosh, poisson, kullback_leibler_divergence, hinge, squared_hinge, categorical_hinge, binary_crossentropy, kullback_leibler_divergence, poisson, cosine_proximity, is_categorical_crossentropy, sparse_categorical_crossentropy, binary_accuracy, categorical_accuracy, sparse_categorical_accuracy, top_k_categorical_accuracy, sparse_top_k_categorical_accuracy, mean_absolute_error, mean_absolute_percentage_error, mean_squared_error, mean_squared_logarithmic_error, squared_hinge, hinge, categorical_hinge, logcosh, huber, cosine_similarity, cosine_proximity, poisson, kl_divergence, kullback_leibler_divergence, sparse_categorical_crossentropy, binary_crossentropy, is_categorical_crossentropy, sparse_categorical_crossentropy, categorical_crossentropy, sparse_categorical_crossentropy, binary_accuracy, categorical_accuracy, sparse_categorical_accuracy, top_k_categorical_accuracy, sparse_top_k_categorical_accuracy
+                "epoch": 150,
                 "batch_size": 20,
                 "regularizer": "l1", # l1, l2, l1_l2
                 "l1": 0.05, # lambda value for l1 regularization, lambda for l2 and l1_l2 can be set equally as well
@@ -104,7 +104,7 @@ def main():
                 config.layer_1,
                 activation=config.activation_1,
                 kernel_initializer=config.kernel_initializer_1,
-                kernel_regularizer=set_regularizer(config.regularizer, config.l1),
+                #kernel_regularizer=set_regularizer(config.regularizer, config.l1),
             )
         )
         model.add(Dropout(config.dropout))
@@ -113,20 +113,21 @@ def main():
                 config.layer_2,
                 activation=config.activation_2,
                 kernel_initializer=config.kernel_initializer_2,
-                kernel_regularizer=set_regularizer(config.regularizer, config.l1),
+                #kernel_regularizer=set_regularizer(config.regularizer, config.l1),
             )
         )
         model.add(Dropout(config.dropout))
+        '''
         model.add(
             Dense(
                 config.layer_3,
                 activation=config.activation_3,
                 kernel_initializer=config.kernel_initializer_3,
-                kernel_regularizer=set_regularizer(config.regularizer, config.l1),
+                #kernel_regularizer=set_regularizer(config.regularizer, config.l1),
             )
         )
-        model.add(Dropout(config.dropout))
-        model.add(Dense(1, activation="relu"))
+        model.add(Dropout(config.dropout))#'''
+        model.add(Dense(1))#, activation="relu"))
 
         # Compile the model
         model.compile(set_optimizer(config.optimizer), loss=config.loss)
