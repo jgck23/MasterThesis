@@ -22,6 +22,22 @@ from wandb.integration.keras import (
     WandbCallback,
 )
 
+# Define sweep config
+sweep_configuration = {
+    "method": "random",
+    "name": "sweep",
+    "metric": {"goal": "minimize", "name": "val_loss"},
+    "parameters": {
+        "batch_size": {"values": [5, 15, 30]},
+        "neurons_1": {"values": [128, 256, 512, 1024, 2048]},
+        "neurons_2": {"values": [128, 256, 512, 1024, 2048]},
+        "neurons_3": {"values": [128, 256, 512, 1024, 2048]},
+        "lr": {"max": 0.1, "min": 0.0001},
+        "dropout": {"max": 0.5, "min": 0.1},
+    },
+}
+
+
 os.environ["WANDB_RUN_GROUP"] = "experiment-" + wandb.util.generate_id()
 def main():
     # Load the data
@@ -33,7 +49,7 @@ def main():
     trial_ids = data.iloc[:, 0].values  # 1st column, trial IDs
 
     # Initialize GroupShuffleSplit
-    gss = GroupShuffleSplit(n_splits=1, test_size=0.2, random_state=42)
+    gss = GroupShuffleSplit(n_splits=1, test_size=0.2, random_state=25)
 
     # Split the data
     for train_index, test_index in gss.split(X, y, groups=trial_ids):
@@ -50,7 +66,7 @@ def main():
     # y_test = scaler_y.transform(y_test.reshape(-1, 1)).ravel()
 
     # Implement 5-fold cross-validation on the training+validation set
-    gkf = GroupKFold(n_splits=2)  # , shuffle=False)#, random_state=42)
+    gkf = GroupKFold(n_splits=5)  # , shuffle=False)#, random_state=42)
     fold = 1
     val_losses = []
     rmses = []
@@ -80,9 +96,9 @@ def main():
                 "kernel_initializer_3": "HeNormal", # HeNormal, GlorotNormal, LecunNormal, HeUniform, GlorotUniform, LecunUniform
                 "activation_3": "relu", # relu, sigmoid, tanh, softmax, softplus, softsign, selu, elu, exponential
                 "optimizer": "adam", # adam, sgd, rmsprop, adagrad, adadelta, adamax, nadam, adamw
-                "loss": "mean_absolute_error", # mean_squared_error, mean_absolute_error, mean_absolute_percentage_error, mean_squared_logarithmic_error, cosine_similarity, huber, logcosh, poisson, kullback_leibler_divergence, hinge, squared_hinge, categorical_hinge, binary_crossentropy, kullback_leibler_divergence, poisson, cosine_proximity, is_categorical_crossentropy, sparse_categorical_crossentropy, binary_accuracy, categorical_accuracy, sparse_categorical_accuracy, top_k_categorical_accuracy, sparse_top_k_categorical_accuracy, mean_absolute_error, mean_absolute_percentage_error, mean_squared_error, mean_squared_logarithmic_error, squared_hinge, hinge, categorical_hinge, logcosh, huber, cosine_similarity, cosine_proximity, poisson, kl_divergence, kullback_leibler_divergence, sparse_categorical_crossentropy, binary_crossentropy, is_categorical_crossentropy, sparse_categorical_crossentropy, categorical_crossentropy, sparse_categorical_crossentropy, binary_accuracy, categorical_accuracy, sparse_categorical_accuracy, top_k_categorical_accuracy, sparse_top_k_categorical_accuracy
+                "loss": "mean_squared_error", # mean_squared_error, mean_absolute_error, mean_absolute_percentage_error, mean_squared_logarithmic_error, cosine_similarity, huber, logcosh, poisson, kullback_leibler_divergence, hinge, squared_hinge, categorical_hinge, binary_crossentropy, kullback_leibler_divergence, poisson, cosine_proximity, is_categorical_crossentropy, sparse_categorical_crossentropy, binary_accuracy, categorical_accuracy, sparse_categorical_accuracy, top_k_categorical_accuracy, sparse_top_k_categorical_accuracy, mean_absolute_error, mean_absolute_percentage_error, mean_squared_error, mean_squared_logarithmic_error, squared_hinge, hinge, categorical_hinge, logcosh, huber, cosine_similarity, cosine_proximity, poisson, kl_divergence, kullback_leibler_divergence, sparse_categorical_crossentropy, binary_crossentropy, is_categorical_crossentropy, sparse_categorical_crossentropy, categorical_crossentropy, sparse_categorical_crossentropy, binary_accuracy, categorical_accuracy, sparse_categorical_accuracy, top_k_categorical_accuracy, sparse_top_k_categorical_accuracy
                 "epoch": 100,
-                "batch_size": 20,
+                "batch_size": 30,
                 "regularizer": "l1", # l1, l2, l1_l2
                 "l1": 0.05, # lambda value for l1 regularization, lambda for l2 and l1_l2 can be set equally as well
                 #"l2": 0.05,
@@ -216,17 +232,6 @@ def main():
         wandb.finish()
 
         fold += 1
-
-    # Calculate average validation loss and RMSE
-    avg_val_loss = np.mean(val_losses)
-    avg_rmse = np.mean(rmses)
-    print(f"Average Validation Loss: {avg_val_loss}")
-    print(f"Average RMSE: {avg_rmse}")
-    # best fold
-    best_fold_loss = np.argmin(val_losses) + 1
-    print(f"Best Fold according to loss: {best_fold_loss}")
-    best_fold_rmse = np.argmin(rmses) + 1
-    print(f"Best Fold according to RMSE: {best_fold_rmse}")
 
 if __name__ == "__main__":
     print("main.py is being run directly")

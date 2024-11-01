@@ -4,8 +4,8 @@ from sklearn.model_selection import train_test_split, KFold, GroupKFold
 from sklearn.preprocessing import StandardScaler
 import tensorflow as tf
 from keras.models import Sequential
-from keras.layers import Dense, Dropout
-from keras.optimizers.legacy import Adam
+from keras.layers import Dense, Dropout, Input
+from keras.optimizers import Adam
 from sklearn.metrics import root_mean_squared_error
 from sklearn.utils import shuffle
 import matplotlib.pyplot as plt
@@ -17,8 +17,8 @@ epochs = 50
 trial_size = 900
 
 # Load the data
-data_train = pd.read_csv('new_train.csv', sep=';')
-data_test = pd.read_csv('new_test.csv', sep=';')
+data_train = pd.read_csv('NN_Bachelor_Thesis/new_train.csv', sep=';')
+data_test = pd.read_csv('NN_Bachelor_Thesis/new_test.csv', sep=';')
 
 # Split the data into features and target
 X = data_train.iloc[:, :-1].values  # All columns except the last one
@@ -45,7 +45,7 @@ X_train_val = scaler.fit_transform(X_train_val)
 X_test = scaler.transform(X_test)
 
 # Implement 5-fold cross-validation on the training+validation set
-gkf = GroupKFold(n_splits=5)#, shuffle=False)#, random_state=42)
+gkf = GroupKFold(n_splits=2)#, shuffle=False)#, random_state=42)
 fold = 1
 val_losses = []
 rmses = []
@@ -60,11 +60,13 @@ for train_index, val_index in gkf.split(X_train_val, y_train_val, groups=trial_i
 
     # Build the model
     model = Sequential()
-    model.add(Dense(11, activation='relu', input_shape=(X_train.shape[1],)))
-    model.add(Dense(300, activation='relu', kernel_initializer='HeNormal'))
-    model.add(Dropout(0.2))
-    model.add(Dense(60, activation='relu', kernel_initializer='HeNormal'))
-    model.add(Dropout(0.2))
+    model.add(Input(shape=(X_train_val.shape[1],)))
+    model.add(Dense(600, activation='relu', kernel_initializer='HeNormal', kernel_regularizer='l1_l2'))
+    model.add(Dropout(0.25))
+    model.add(Dense(300, activation='relu', kernel_initializer='HeNormal', kernel_regularizer='l1_l2'))
+    model.add(Dropout(0.25))
+    model.add(Dense(60, activation='relu', kernel_initializer='HeNormal', kernel_regularizer='l1_l2'))
+    model.add(Dropout(0.25))
     model.add(Dense(1))
 
     # Compile the model
@@ -90,7 +92,7 @@ for train_index, val_index in gkf.split(X_train_val, y_train_val, groups=trial_i
     y_pred = model.predict(X_val)
 
     # Calculate RMSE
-    rmse = np.sqrt(root_mean_squared_error(y_val, y_pred))
+    rmse = root_mean_squared_error(y_val, y_pred)
     rmses.append(rmse)
     print(f'Fold {fold} - RMSE: {rmse}')
 
@@ -114,7 +116,7 @@ model.load_weights(f'best_model_{best_fold_loss}.keras')
 test_loss = model.evaluate(X_test, y_test)
 print(f'Test Loss: {test_loss}')
 y_test_pred = model.predict(X_test)
-test_rmse = np.sqrt(root_mean_squared_error(y_test, y_test_pred))
+test_rmse = root_mean_squared_error(y_test, y_test_pred)
 print(f'Test RMSE: {test_rmse}')
 
 '''

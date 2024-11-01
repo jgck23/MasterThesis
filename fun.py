@@ -30,7 +30,7 @@ def load_data():
 def set_optimizer(optimizer):
     optimizer = optimizer.lower().strip()
     if optimizer == "adam":
-        return tf.keras.optimizers.Adam(learning_rate=0.0007, beta_1=0.9, beta_2=0.999)
+        return tf.keras.optimizers.Adam(learning_rate=0.0009, beta_1=0.9, beta_2=0.999)
     elif optimizer == "sgd":
         return tf.keras.optimizers.SGD(learning_rate=0.01, momentum=0.0, nesterov=False)
     elif optimizer == "rmsprop":

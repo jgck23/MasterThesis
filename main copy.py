@@ -27,6 +27,12 @@ def main():
     # Load the data
     data, name_mat = load_data()
 
+    # set every value smaller than 0.01 to 0 and every value bigger than 0.05 to 0.03
+    data.iloc[:, 1:-3] = data.iloc[:, 1:-3].applymap(lambda x: 0 if x < 0.01 else (0.03 if x > 0.05 else x))
+    # delete every row with ellbow angles smaller than 30 degrees and bigger than 110 degrees
+    data = data[data.iloc[:, -3] > 30]
+    data = data[data.iloc[:, -3] < 110]
+
     # Split the data into features and target
     X = data.iloc[:, 1:101].values  # All features, columns 1 to 100
     y = data.iloc[:, 101].values  # 101th column, elbow flexion angle
@@ -69,14 +75,14 @@ def main():
             # track hyperparameters and run metadata with wandb.config
             config={
                 "name_mat": name_mat,
-                "layer_1": 1024,
+                "layer_1": 1000,
                 "activation_1": "relu", # relu, sigmoid, tanh, softmax, softplus, softsign, selu, elu, exponential
                 "kernel_initializer_1": "HeNormal", # HeNormal, GlorotNormal, LecunNormal, HeUniform, GlorotUniform, LecunUniform
-                "dropout": 0.25,  # random.uniform(0.01, 0.80),
-                "layer_2": 1024,
+                "dropout": 0.1,  # random.uniform(0.01, 0.80),
+                "layer_2": 1000,
                 "kernel_initializer_2": "HeNormal", # HeNormal, GlorotNormal, LecunNormal, HeUniform, GlorotUniform, LecunUniform
                 "activation_2": "relu", # relu, sigmoid, tanh, softmax, softplus, softsign, selu, elu, exponential
-                "layer_3": 512,
+                "layer_3": 1000,
                 "kernel_initializer_3": "HeNormal", # HeNormal, GlorotNormal, LecunNormal, HeUniform, GlorotUniform, LecunUniform
                 "activation_3": "relu", # relu, sigmoid, tanh, softmax, softplus, softsign, selu, elu, exponential
                 "optimizer": "adam", # adam, sgd, rmsprop, adagrad, adadelta, adamax, nadam, adamw
@@ -104,7 +110,7 @@ def main():
                 config.layer_1,
                 activation=config.activation_1,
                 kernel_initializer=config.kernel_initializer_1,
-                kernel_regularizer=set_regularizer(config.regularizer, config.l1),
+                #kernel_regularizer=set_regularizer(config.regularizer, config.l1),
             )
         )
         model.add(Dropout(config.dropout))
@@ -113,36 +119,48 @@ def main():
                 config.layer_2,
                 activation=config.activation_2,
                 kernel_initializer=config.kernel_initializer_2,
-                kernel_regularizer=set_regularizer(config.regularizer, config.l1),
+                #kernel_regularizer=set_regularizer(config.regularizer, config.l1),
             )
         )
         model.add(Dropout(config.dropout))
+        
         model.add(
             Dense(
                 config.layer_3,
                 activation=config.activation_3,
                 kernel_initializer=config.kernel_initializer_3,
-                kernel_regularizer=set_regularizer(config.regularizer, config.l1),
+                #kernel_regularizer=set_regularizer(config.regularizer, config.l1),
             )
         )
         model.add(Dropout(config.dropout))
-        model.add(Dense(1, activation="relu"))
+
+        model.add(
+            Dense(
+                config.layer_3,
+                activation=config.activation_3,
+                kernel_initializer=config.kernel_initializer_3,
+                #kernel_regularizer=set_regularizer(config.regularizer, config.l1),
+            )
+        )
+        model.add(Dropout(config.dropout))
+        
+        model.add(Dense(1))#, activation="relu"))
 
         # Compile the model
         model.compile(set_optimizer(config.optimizer), loss=config.loss)
 
         # early stopping and reset the weights to the best model with the lowest validation loss
         early_stopping = tf.keras.callbacks.EarlyStopping(
-            monitor="val_loss",
+            monitor="val_root_mean_squared_error",
             mode="min",
             verbose=1,
-            patience=10,
+            patience=25,
             restore_best_weights=True,
         )
         # ModelCheckpoint callback to save the best model
         model_checkpoint = tf.keras.callbacks.ModelCheckpoint(
             f"best_model_{fold}.keras",
-            monitor="val_loss",
+            monitor="val_root_mean_squared_error",
             mode="min",
             save_best_only=True,
             verbose=1,
@@ -166,9 +184,9 @@ def main():
 
         # Evaluate the model on the validation set
         model.load_weights(f"best_model_{fold}.keras")
-        val_loss = model.evaluate(X_val, y_val)
-        val_losses.append(val_loss)
-        wandb.log({"Validation Loss": round(val_loss, 2)})
+        #val_loss = model.evaluate(X_val, y_val)
+        #val_losses.append(val_loss)
+        #wandb.log({"Validation Loss": round(val_loss, 2)})
 
         # Predict the validation set results
         y_pred = model.predict(X_val)
@@ -182,9 +200,9 @@ def main():
         wandb.save(f"best_model_{fold}.keras")
         
         # Evaluate the model on the test set and log loss
-        test_loss = model.evaluate(X_test, y_test)
+        #test_loss = model.evaluate(X_test, y_test)
         y_test_pred = model.predict(X_test)
-        wandb.log({'Test Loss': round(test_loss, 2)})
+        #wandb.log({'Test Loss': round(test_loss, 2)})
 
         # Calculate RMSE for the test set and log it
         test_rmse = root_mean_squared_error(y_test, y_test_pred)
@@ -206,8 +224,8 @@ def main():
         wandb.log({"Actual vs Predicted Values for test set": plt})
 
         # print statements
-        print(f"Fold {fold} - Validation Loss: {val_loss}")
-        print(f"Fold {fold} - Test Loss: {test_loss}")
+        #print(f"Fold {fold} - Validation Loss: {val_loss}")
+        #print(f"Fold {fold} - Test Loss: {test_loss}")
         print(f"Fold {fold} - Validation RMSE: {rmse}")
         print(f"Fold {fold} - Test RMSE: {test_rmse}")
         
@@ -216,7 +234,7 @@ def main():
         wandb.finish()
 
         fold += 1
-
+    '''
     # Calculate average validation loss and RMSE
     avg_val_loss = np.mean(val_losses)
     avg_rmse = np.mean(rmses)
@@ -227,7 +245,8 @@ def main():
     print(f"Best Fold according to loss: {best_fold_loss}")
     best_fold_rmse = np.argmin(rmses) + 1
     print(f"Best Fold according to RMSE: {best_fold_rmse}")
-
+'''
+    
 if __name__ == "__main__":
     print("main.py is being run directly")
     main()
