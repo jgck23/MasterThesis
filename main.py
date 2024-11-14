@@ -1,10 +1,11 @@
 import numpy as np
+import pandas as pd
 from sklearn.model_selection import (
     train_test_split,
     GroupShuffleSplit,
     GroupKFold,
 )
-from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import StandardScaler, MinMaxScaler, RobustScaler, QuantileTransformer
 import tensorflow as tf
 
 # from keras.models import Sequential
@@ -26,6 +27,17 @@ os.environ["WANDB_RUN_GROUP"] = "experiment-" + wandb.util.generate_id()
 def main():
     # Load the data
     data, name_mat = load_data()
+    #data = pd.read_csv('Data/EHKL.csv', sep=',')
+    #name_mat = 'EHKL'
+
+    # plot EHKL data for visualization purposes
+    #'''
+    plt.figure(figsize=(12, 8))
+    plt.plot(data.iloc[:, 1:101].values)
+    plt.title(f"{name_mat} Data Visualization")
+    plt.xlabel("Sample Index")
+    plt.ylabel("Feature Values")
+    plt.show()#'''
 
     # Split the data into features and target
     X = data.iloc[:, 1:101].values  # All features, columns 1 to 100
@@ -33,7 +45,7 @@ def main():
     trial_ids = data.iloc[:, 0].values  # 1st column, trial IDs
 
     # Initialize GroupShuffleSplit
-    gss = GroupShuffleSplit(n_splits=1, test_size=0.2, random_state=42)
+    gss = GroupShuffleSplit(n_splits=1, test_size=0.2, random_state = 42)#=None)
 
     # Split the data
     for train_index, test_index in gss.split(X, y, groups=trial_ids):
@@ -41,16 +53,33 @@ def main():
         y_train, y_test = y[train_index], y[test_index]
         trial_ids_train = data.iloc[train_index, 0].values
 
+    # Check for trial leakage in train/test split
+    train_trials = set(trial_ids[train_index])
+    test_trials = set(trial_ids[test_index])
+    common_trials = train_trials.intersection(test_trials)
+    if common_trials:
+        print("Trial leakage detected between train and test sets for trials:", common_trials)
+    else:
+        print("No trial leakage between train and test sets.")
+
     # Standardize the data
-    scaler_x = StandardScaler()
-    scaler_y = StandardScaler()
+    scaler_x = MinMaxScaler()
+    #scaler_y = StandardScaler()
     X_train = scaler_x.fit_transform(X_train)
     X_test = scaler_x.transform(X_test)
     # y_train = scaler_y.fit_transform(y_train.reshape(-1, 1)).ravel()
     # y_test = scaler_y.transform(y_test.reshape(-1, 1)).ravel()
 
+    #'''
+    plt.figure(figsize=(12, 8))
+    plt.plot(X_train[:, 1:101])
+    plt.title(f"{name_mat} Data Visualization")
+    plt.xlabel("Sample Index")
+    plt.ylabel("Feature Values")
+    plt.show()#'''
+
     # Implement 5-fold cross-validation on the training+validation set
-    gkf = GroupKFold(n_splits=2)  # , shuffle=False)#, random_state=42)
+    gkf = GroupKFold(n_splits=3)  # , shuffle=False)#, random_state=42)
     fold = 1
     val_losses = []
     rmses = []
@@ -69,24 +98,25 @@ def main():
             # track hyperparameters and run metadata with wandb.config
             config={
                 "name_mat": name_mat,
-                "layer_1": 10,
-                "activation_1": "selu", # relu, sigmoid, tanh, softmax, softplus, softsign, selu, elu, exponential
+                "layer_1": 300,
+                "activation_1": "relu", # relu, sigmoid, tanh, softmax, softplus, softsign, selu, elu, exponential
                 "kernel_initializer_1": "HeNormal", # HeNormal, GlorotNormal, LecunNormal, HeUniform, GlorotUniform, LecunUniform
                 "dropout": 0.2,  # random.uniform(0.01, 0.80),
-                "layer_2": 100,
+                "layer_2": 300,
                 "kernel_initializer_2": "HeNormal", # HeNormal, GlorotNormal, LecunNormal, HeUniform, GlorotUniform, LecunUniform
-                "activation_2": "selu", # relu, sigmoid, tanh, softmax, softplus, softsign, selu, elu, exponential
-                "layer_3": 100,
+                "activation_2": "relu", # relu, sigmoid, tanh, softmax, softplus, softsign, selu, elu, exponential
+                "layer_3": 300,
                 "kernel_initializer_3": "HeNormal", # HeNormal, GlorotNormal, LecunNormal, HeUniform, GlorotUniform, LecunUniform
-                "activation_3": "selu", # relu, sigmoid, tanh, softmax, softplus, softsign, selu, elu, exponential
-                "optimizer": "adamw", # adam, sgd, rmsprop, adagrad, adadelta, adamax, nadam, adamw
-                "loss": "mean_squared_error", # mean_squared_error, mean_absolute_error, mean_absolute_percentage_error, mean_squared_logarithmic_error, cosine_similarity, huber, logcosh, poisson, kullback_leibler_divergence, hinge, squared_hinge, categorical_hinge, binary_crossentropy, kullback_leibler_divergence, poisson, cosine_proximity, is_categorical_crossentropy, sparse_categorical_crossentropy, binary_accuracy, categorical_accuracy, sparse_categorical_accuracy, top_k_categorical_accuracy, sparse_top_k_categorical_accuracy, mean_absolute_error, mean_absolute_percentage_error, mean_squared_error, mean_squared_logarithmic_error, squared_hinge, hinge, categorical_hinge, logcosh, huber, cosine_similarity, cosine_proximity, poisson, kl_divergence, kullback_leibler_divergence, sparse_categorical_crossentropy, binary_crossentropy, is_categorical_crossentropy, sparse_categorical_crossentropy, categorical_crossentropy, sparse_categorical_crossentropy, binary_accuracy, categorical_accuracy, sparse_categorical_accuracy, top_k_categorical_accuracy, sparse_top_k_categorical_accuracy
-                "epoch": 150,
-                "batch_size": 20,
-                "regularizer": "l1", # l1, l2, l1_l2
-                "l1": 0.05, # lambda value for l1 regularization, lambda for l2 and l1_l2 can be set equally as well
+                "activation_3": "relu", # relu, sigmoid, tanh, softmax, softplus, softsign, selu, elu, exponential
+                "optimizer": "adam", # adam, sgd, rmsprop, adagrad, adadelta, adamax, nadam, adamw
+                "learning_rate": 0.0005,
+                "loss": "mean_squared_error",  
+                "epoch": 200,
+                "batch_size": 20, #20
+                #"regularizer": "l1", # l1, l2, l1_l2
+                #"l1": 0.01, # lambda value for l1 regularization, lambda for l2 and l1_l2 can be set equally as well
                 #"l2": 0.05,
-                "FYI": "The saved model is the best model according to the lowest validation loss",
+                "FYI": "The saved model is the best model according to the lowest validation loss during training.",
 
             },
         )
@@ -95,6 +125,16 @@ def main():
         config = wandb.config
         X_train_val, X_val = X_train[train_index], X_train[val_index]
         y_train_val, y_val = y_train[train_index], y_train[val_index]
+
+        # Check for trial leakage in train/validation split for each fold
+        train_trials_cv = set(trial_ids_train[train_index])
+        val_trials_cv = set(trial_ids_train[val_index])
+        common_trials_cv = train_trials_cv.intersection(val_trials_cv)
+
+        if common_trials_cv:
+            print(f"Trial leakage detected in fold {fold} between train and validation sets for trials:", common_trials_cv)
+        else:
+            print(f"No trial leakage in fold {fold} between train and validation sets.")
 
         # Build the model
         model = Sequential()
@@ -127,17 +167,18 @@ def main():
             )
         )
         model.add(Dropout(config.dropout))#'''
-        model.add(Dense(1))#, activation="relu"))
+        #'''
+        model.add(Dense(1))#, activation = 'linear', kernel_initializer='GlorotUniform'))#, activation="relu"))
 
         # Compile the model
-        model.compile(set_optimizer(config.optimizer), loss=config.loss)
+        model.compile(set_optimizer(config.optimizer, config.learning_rate), loss=config.loss)
 
         # early stopping and reset the weights to the best model with the lowest validation loss
         early_stopping = tf.keras.callbacks.EarlyStopping(
             monitor="val_loss",
             mode="min",
             verbose=1,
-            patience=10,
+            patience=15,
             restore_best_weights=True,
         )
         # ModelCheckpoint callback to save the best model
@@ -228,6 +269,17 @@ def main():
     print(f"Best Fold according to loss: {best_fold_loss}")
     best_fold_rmse = np.argmin(rmses) + 1
     print(f"Best Fold according to RMSE: {best_fold_rmse}")
+
+    '''# Plot histogram of model weights per layer
+    for layer in model.layers:
+        if hasattr(layer, 'weights') and layer.get_weights():
+            weights = layer.get_weights()[0]
+            plt.figure(figsize=(10, 6))
+            plt.hist(weights.flatten(), bins=50, alpha=0.75)
+            plt.title(f'Layer {layer.name} Weights Distribution')
+            plt.xlabel('Weight Value')
+            plt.ylabel('Frequency')
+            plt.show()'''
 
 if __name__ == "__main__":
     print("main.py is being run directly")

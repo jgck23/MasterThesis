@@ -9,3 +9,4 @@ CNN.py
 # Ignore data files
 *.mat
 *.numbers
+/Data

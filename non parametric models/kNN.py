@@ -12,6 +12,7 @@ from fun import load_data
 
 # Load the data
 data, name_mat = load_data()
+#data= pd.read_csv('Data/EHKL.csv', sep=',')
 
 # Split the data into features and target
 X = data.iloc[:, 1:101].values  # All features, columns 1 to 100
@@ -35,8 +36,9 @@ X_test = scaler_x.transform(X_test)
 
 train_rmse=[]
 test_rmse=[]
+k_neighbors=750
 # Create and train KNN 
-for i in range (1,200):
+for i in range (1,k_neighbors):
     knn_regressor = KNeighborsRegressor(n_neighbors=i)
     knn_regressor.fit(X_train, y_train)
     y_pred = knn_regressor.predict(X_test)
@@ -46,13 +48,15 @@ for i in range (1,200):
     print("training rmse for k="+str(i)+":", training_rmse) 
     print("testing rmse for k="+str(i)+":", testing_rmse)
     print(" ")
+    #print(testing_rmse)
+    #print(training_rmse)
 
     test_rmse.append(testing_rmse)
     train_rmse.append(training_rmse)
 
-# Plot accuracy
-plt.plot(range(1, 200), test_rmse, label='Test RMSE')
-plt.plot(range(1, 200), train_rmse, label='Train RMSE')
+# Plot accuracy, optimal k is ca. 600
+plt.plot(range(1, k_neighbors), test_rmse, label='Test RMSE')
+plt.plot(range(1, k_neighbors), train_rmse, label='Train RMSE')
 plt.xlabel('Number of Neighbors (k)')
 plt.ylabel('RMSE')
 plt.title('RMSE vs Number of Neighbors')

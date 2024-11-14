@@ -3,10 +3,11 @@ import glob
 import pandas as pd
 import tensorflow as tf
 
-def load_data():
+def load_data(userinput=None):
     while True:
         try:
-            userinput= input("Enter the name of the file you want to create a model for : ")
+            if userinput is None:
+                userinput= input("Enter the name of the file you want to create a model for : ")
             # Load the .mat file
             mat_file = glob.glob('**/'+str(userinput)+'.mat', recursive=True)
             if len(mat_file) > 1:
@@ -27,24 +28,24 @@ def load_data():
             print("Invalid input")
             pass
 
-def set_optimizer(optimizer):
+def set_optimizer(optimizer, learning_rate=0.001, beta_1=0.9, beta_2=0.999):
     optimizer = optimizer.lower().strip()
     if optimizer == "adam":
-        return tf.keras.optimizers.Adam(learning_rate=0.0001, beta_1=0.9, beta_2=0.999)
+        return tf.keras.optimizers.Adam(learning_rate=learning_rate, beta_1=beta_1, beta_2=beta_2)
     elif optimizer == "sgd":
-        return tf.keras.optimizers.SGD(learning_rate=0.01, momentum=0.0, nesterov=False)
+        return tf.keras.optimizers.SGD(learning_rate=learning_rate, momentum=0.0, nesterov=False)
     elif optimizer == "rmsprop":
-        return tf.keras.optimizers.RMSprop(learning_rate=0.001, rho=0.9)
+        return tf.keras.optimizers.RMSprop(learning_rate=learning_rate, rho=0.9)
     elif optimizer == "adagrad":
-        return tf.keras.optimizers.Adagrad(learning_rate=0.01)
+        return tf.keras.optimizers.Adagrad(learning_rate=learning_rate)
     elif optimizer == "adadelta":
-        return tf.keras.optimizers.Adadelta(learning_rate=1.0, rho=0.95)
+        return tf.keras.optimizers.Adadelta(learning_rate=learning_rate, rho=0.95)
     elif optimizer == "adamax":
-        return tf.keras.optimizers.Adamax(learning_rate=0.002, beta_1=0.9, beta_2=0.999)
+        return tf.keras.optimizers.Adamax(learning_rate=learning_rate, beta_1=beta_1, beta_2=beta_2)
     elif optimizer == "nadam":
-        return tf.keras.optimizers.Nadam(learning_rate=0.002, beta_1=0.9, beta_2=0.999)
-    elif optimizer=="adamw":
-        return tf.keras.optimizers.AdamW(learning_rate=0.001, beta_1=0.9, beta_2=0.999)
+        return tf.keras.optimizers.Nadam(learning_rate=learning_rate, beta_1=beta_1, beta_2=beta_2)
+    elif optimizer == "adamw":
+        return tf.keras.optimizers.AdamW(learning_rate=learning_rate, beta_1=beta_1, beta_2=beta_2)
     else:
         raise ValueError("Invalid optimizer")
     
