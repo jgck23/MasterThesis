@@ -1,0 +1,9 @@
+import pandas as pd
+
+# Read the CSV files into a DataFrame
+forcesensor = pd.read_csv('/Users/jacob/Documents/Microsoft Visual Studio Code Projects/Masterarbeit/Data/Foot Sensor Force Data/241113_Leopard24_FSensor.csv', header=None)
+xsens = pd.read_csv('/Users/jacob/Documents/Microsoft Visual Studio Code Projects/Masterarbeit/Data/Xsens Data/241113_Leopard24_Xsens.csv', header=None)
+
+# Combine the two DataFrames
+combined = pd.concat([forcesensor, xsens], axis=1)
+combined.to_csv('Data/Dataset_Leopard24.csv', index=False, header=False)

@@ -8,15 +8,15 @@ import pandas as pd
 import csv
 import matplotlib.pyplot as plt
 from sklearn.model_selection import cross_validate
-from fun import load_data
+#from fun import load_data
 
 # Load the data
-data, name_mat = load_data()
-#data= pd.read_csv('Data/EHKL.csv', sep=',')
+#data, name_mat = load_data()
+data= pd.read_csv('Data/Dataset_Leopard24.csv', sep=',')
 
 # Split the data into features and target
-X = data.iloc[:, 1:101].values  # All features, columns 1 to 100
-y = data.iloc[:, 101].values  # 101th column, elbow flexion angle
+X = data.iloc[:, 1:-4].values  # All features 
+y = data.iloc[:, -3].values  # 101th column, elbow flexion angle
 trial_ids = data.iloc[:, 0].values  # 1st column, trial IDs
 
 # Initialize GroupShuffleSplit
@@ -36,7 +36,7 @@ X_test = scaler_x.transform(X_test)
 
 train_rmse=[]
 test_rmse=[]
-k_neighbors=750
+k_neighbors=1000
 # Create and train KNN 
 for i in range (1,k_neighbors):
     knn_regressor = KNeighborsRegressor(n_neighbors=i)

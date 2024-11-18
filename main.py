@@ -26,26 +26,28 @@ from wandb.integration.keras import (
 os.environ["WANDB_RUN_GROUP"] = "experiment-" + wandb.util.generate_id()
 def main():
     # Load the data
-    data, name_mat = load_data()
-    #data = pd.read_csv('Data/EHKL.csv', sep=',')
-    #name_mat = 'EHKL'
+    #data, name_mat = load_data()
+    data = pd.read_csv('Data/Dataset_Leopard24.csv', sep=',', header=None)
 
-    # plot EHKL data for visualization purposes
-    #'''
+    '''
     plt.figure(figsize=(12, 8))
-    plt.plot(data.iloc[:, 1:101].values)
-    plt.title(f"{name_mat} Data Visualization")
+    plt.plot(data.iloc[:, :-4].values)
+    #plt.title(f"{name_mat} Data Visualization")
     plt.xlabel("Sample Index")
     plt.ylabel("Feature Values")
     plt.show()#'''
 
     # Split the data into features and target
-    X = data.iloc[:, 1:101].values  # All features, columns 1 to 100
-    y = data.iloc[:, 101].values  # 101th column, elbow flexion angle
+    X = data.iloc[:, 1:-4].values  # All features, the last 4 columns are not features
+    y = data.iloc[:, -3].values  # -4: wrist angle, -3: elbow angle, -2: shoulder flexion, -1: shoulder abduction
     trial_ids = data.iloc[:, 0].values  # 1st column, trial IDs
+    plt.plot(data.iloc[:, -4].values)
+    #plt.show()
+    plt.plot(y)
+    #plt.show()
 
     # Initialize GroupShuffleSplit
-    gss = GroupShuffleSplit(n_splits=1, test_size=0.2, random_state = 42)#=None)
+    gss = GroupShuffleSplit(n_splits=1, test_size=0.2, random_state = 34)#=None)
 
     # Split the data
     for train_index, test_index in gss.split(X, y, groups=trial_ids):
@@ -70,14 +72,6 @@ def main():
     # y_train = scaler_y.fit_transform(y_train.reshape(-1, 1)).ravel()
     # y_test = scaler_y.transform(y_test.reshape(-1, 1)).ravel()
 
-    #'''
-    plt.figure(figsize=(12, 8))
-    plt.plot(X_train[:, 1:101])
-    plt.title(f"{name_mat} Data Visualization")
-    plt.xlabel("Sample Index")
-    plt.ylabel("Feature Values")
-    plt.show()#'''
-
     # Implement 5-fold cross-validation on the training+validation set
     gkf = GroupKFold(n_splits=3)  # , shuffle=False)#, random_state=42)
     fold = 1
@@ -92,29 +86,29 @@ def main():
 
         # Start a run, tracking hyperparameters
         wandb.init(
-            project="master-thesis-NN", # set the wandb project where this run will be logged
+            project="Flexiforce_Xsens_Leopard24", # set the wandb project where this run will be logged
             group=os.environ["WANDB_RUN_GROUP"], # group the runs together
             job_type="eval", #job type
             # track hyperparameters and run metadata with wandb.config
             config={
-                "name_mat": name_mat,
-                "layer_1": 300,
+                "name_mat": 'Leopard24',
+                "layer_1": 500,
                 "activation_1": "relu", # relu, sigmoid, tanh, softmax, softplus, softsign, selu, elu, exponential
                 "kernel_initializer_1": "HeNormal", # HeNormal, GlorotNormal, LecunNormal, HeUniform, GlorotUniform, LecunUniform
                 "dropout": 0.2,  # random.uniform(0.01, 0.80),
-                "layer_2": 300,
+                "layer_2": 500,
                 "kernel_initializer_2": "HeNormal", # HeNormal, GlorotNormal, LecunNormal, HeUniform, GlorotUniform, LecunUniform
                 "activation_2": "relu", # relu, sigmoid, tanh, softmax, softplus, softsign, selu, elu, exponential
-                "layer_3": 300,
+                "layer_3": 500,
                 "kernel_initializer_3": "HeNormal", # HeNormal, GlorotNormal, LecunNormal, HeUniform, GlorotUniform, LecunUniform
                 "activation_3": "relu", # relu, sigmoid, tanh, softmax, softplus, softsign, selu, elu, exponential
                 "optimizer": "adam", # adam, sgd, rmsprop, adagrad, adadelta, adamax, nadam, adamw
-                "learning_rate": 0.0005,
-                "loss": "mean_squared_error",  
+                "learning_rate": 0.001,
+                "loss": "huber", 
                 "epoch": 200,
-                "batch_size": 20, #20
-                #"regularizer": "l1", # l1, l2, l1_l2
-                #"l1": 0.01, # lambda value for l1 regularization, lambda for l2 and l1_l2 can be set equally as well
+                "batch_size": 50, #20
+                "regularizer": "l1", # l1, l2, l1_l2
+                "l1": 0.01, # lambda value for l1 regularization, lambda for l2 and l1_l2 can be set equally as well
                 #"l2": 0.05,
                 "FYI": "The saved model is the best model according to the lowest validation loss during training.",
 
@@ -144,7 +138,7 @@ def main():
                 config.layer_1,
                 activation=config.activation_1,
                 kernel_initializer=config.kernel_initializer_1,
-                #kernel_regularizer=set_regularizer(config.regularizer, config.l1),
+                kernel_regularizer=set_regularizer(config.regularizer, config.l1),
             )
         )
         model.add(Dropout(config.dropout))
@@ -153,21 +147,21 @@ def main():
                 config.layer_2,
                 activation=config.activation_2,
                 kernel_initializer=config.kernel_initializer_2,
-                #kernel_regularizer=set_regularizer(config.regularizer, config.l1),
+                kernel_regularizer=set_regularizer(config.regularizer, config.l1),
             )
         )
         model.add(Dropout(config.dropout))
-        '''
+        #'''
         model.add(
             Dense(
                 config.layer_3,
                 activation=config.activation_3,
                 kernel_initializer=config.kernel_initializer_3,
-                #kernel_regularizer=set_regularizer(config.regularizer, config.l1),
+                kernel_regularizer=set_regularizer(config.regularizer, config.l1),
             )
         )
         model.add(Dropout(config.dropout))#'''
-        #'''
+        
         model.add(Dense(1))#, activation = 'linear', kernel_initializer='GlorotUniform'))#, activation="relu"))
 
         # Compile the model
@@ -178,7 +172,7 @@ def main():
             monitor="val_loss",
             mode="min",
             verbose=1,
-            patience=15,
+            patience=12,
             restore_best_weights=True,
         )
         # ModelCheckpoint callback to save the best model
