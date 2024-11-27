@@ -6,6 +6,7 @@ from sklearn.model_selection import (
     GroupKFold,
 )
 from sklearn.preprocessing import StandardScaler, MinMaxScaler, RobustScaler, QuantileTransformer
+from sklearn.feature_selection import VarianceThreshold
 import tensorflow as tf
 
 # from keras.models import Sequential
@@ -26,30 +27,28 @@ from wandb.integration.keras import (
 os.environ["WANDB_RUN_GROUP"] = "experiment-" + wandb.util.generate_id()
 def main():
     # Load the data
-    #data, name_mat = load_data()
-    data = pd.read_csv('Data/Dataset_Leopard24.csv', sep=',', header=None)
+    fileName='Data/241121_Dataset_Leopard24.csv'
+    data = pd.read_csv(fileName, sep=',', header=None)
 
-    '''
-    plt.figure(figsize=(12, 8))
-    plt.plot(data.iloc[:, :-4].values)
-    #plt.title(f"{name_mat} Data Visualization")
-    plt.xlabel("Sample Index")
-    plt.ylabel("Feature Values")
-    plt.show()#'''
+    height_preprocess = 1 # 1: upper trials only, -1: lower trials only, 0: all trials
+    data=data[data.iloc[:, -1] > 500]
 
     # Split the data into features and target
-    X = data.iloc[:, 1:-4].values  # All features, the last 4 columns are not features
-    y = data.iloc[:, -3].values  # -4: wrist angle, -3: elbow angle, -2: shoulder flexion, -1: shoulder abduction
+    X = data.iloc[:, 1:-5].values  # All features, the last 5 columns are not features
+    y = data.iloc[:, -5].values  # -5: wrist angle(x), -4: elbow angle(z), -3: shoulder flexion, -2: shoulder abduction, -1: Z-coordinate of right hand (height)
     trial_ids = data.iloc[:, 0].values  # 1st column, trial IDs
-    plt.plot(data.iloc[:, -4].values)
-    #plt.show()
-    plt.plot(y)
-    #plt.show()
+    
+    var_thres=False
+    if var_thres: # deletes features with low variance, eg. lot of zeros and only a few non-zero values in one column
+        sel = VarianceThreshold(threshold=(.8 * (1 - .8)))
+        X=sel.fit_transform(X)
 
-    # Initialize GroupShuffleSplit
-    gss = GroupShuffleSplit(n_splits=1, test_size=0.2, random_state = 34)#=None)
+    n_groups=trial_ids[-1] #get the last number of trial ids, which is the number of groups
+    n_test_groups=round(0.1*n_groups)
+    print(n_test_groups)
 
-    # Split the data
+    # Initialize GroupShuffleSplit and split the data
+    gss = GroupShuffleSplit(n_splits=1, test_size=n_test_groups, random_state = 42 )
     for train_index, test_index in gss.split(X, y, groups=trial_ids):
         X_train, X_test = X[train_index], X[test_index]
         y_train, y_test = y[train_index], y[test_index]
@@ -66,19 +65,16 @@ def main():
 
     # Standardize the data
     scaler_x = MinMaxScaler()
-    #scaler_y = StandardScaler()
     X_train = scaler_x.fit_transform(X_train)
     X_test = scaler_x.transform(X_test)
-    # y_train = scaler_y.fit_transform(y_train.reshape(-1, 1)).ravel()
-    # y_test = scaler_y.transform(y_test.reshape(-1, 1)).ravel()
 
     # Implement 5-fold cross-validation on the training+validation set
-    gkf = GroupKFold(n_splits=3)  # , shuffle=False)#, random_state=42)
+    gkf = GroupKFold(n_splits=5)
     fold = 1
     val_losses = []
-    rmses = []
-    best_val_loss = np.inf
-    best_model_weights = None
+    test_losses = []
+    val_rmses = []
+    test_rmses = []
 
     for train_index, val_index in gkf.split(X_train, y_train, groups=trial_ids_train):
         print()
@@ -91,12 +87,12 @@ def main():
             job_type="eval", #job type
             # track hyperparameters and run metadata with wandb.config
             config={
-                "name_mat": 'Leopard24',
-                "layer_1": 500,
+                "Dataset": f'{fileName}',
+                "layer_1": 300,
                 "activation_1": "relu", # relu, sigmoid, tanh, softmax, softplus, softsign, selu, elu, exponential
                 "kernel_initializer_1": "HeNormal", # HeNormal, GlorotNormal, LecunNormal, HeUniform, GlorotUniform, LecunUniform
-                "dropout": 0.2,  # random.uniform(0.01, 0.80),
-                "layer_2": 500,
+                "dropout": 0.15,  # random.uniform(0.01, 0.80),
+                "layer_2": 300,
                 "kernel_initializer_2": "HeNormal", # HeNormal, GlorotNormal, LecunNormal, HeUniform, GlorotUniform, LecunUniform
                 "activation_2": "relu", # relu, sigmoid, tanh, softmax, softplus, softsign, selu, elu, exponential
                 "layer_3": 500,
@@ -104,14 +100,15 @@ def main():
                 "activation_3": "relu", # relu, sigmoid, tanh, softmax, softplus, softsign, selu, elu, exponential
                 "optimizer": "adam", # adam, sgd, rmsprop, adagrad, adadelta, adamax, nadam, adamw
                 "learning_rate": 0.001,
-                "loss": "huber", 
+                "loss": "mean_squared_error", 
                 "epoch": 200,
-                "batch_size": 50, #20
+                "batch_size": 20, #20
                 "regularizer": "l1", # l1, l2, l1_l2
                 "l1": 0.01, # lambda value for l1 regularization, lambda for l2 and l1_l2 can be set equally as well
-                #"l2": 0.05,
+                #"l2": 0.001,
                 "FYI": "The saved model is the best model according to the lowest validation loss during training.",
-
+                "VarianceThreshold": var_thres,
+                "height_preprocess": height_preprocess,
             },
         )
 
@@ -124,7 +121,6 @@ def main():
         train_trials_cv = set(trial_ids_train[train_index])
         val_trials_cv = set(trial_ids_train[val_index])
         common_trials_cv = train_trials_cv.intersection(val_trials_cv)
-
         if common_trials_cv:
             print(f"Trial leakage detected in fold {fold} between train and validation sets for trials:", common_trials_cv)
         else:
@@ -151,7 +147,7 @@ def main():
             )
         )
         model.add(Dropout(config.dropout))
-        #'''
+        '''
         model.add(
             Dense(
                 config.layer_3,
@@ -161,7 +157,6 @@ def main():
             )
         )
         model.add(Dropout(config.dropout))#'''
-        
         model.add(Dense(1))#, activation = 'linear', kernel_initializer='GlorotUniform'))#, activation="relu"))
 
         # Compile the model
@@ -186,7 +181,6 @@ def main():
 
         # WandbMetricsLogger will log train and validation metrics to wandb
         # WandbModelCheckpoint will upload model checkpoints to wandb
-        # save_name=f'best_model_{fold}.keras'
         history = model.fit(
             x=X_train_val,
             y=y_train_val,
@@ -200,8 +194,10 @@ def main():
             ],
         )
 
-        # Evaluate the model on the validation set
+        # load the model with the lowest validation loss
         model.load_weights(f"best_model_{fold}.keras")
+        
+        # Evaluate the model on the validation set
         val_loss = model.evaluate(X_val, y_val)
         val_losses.append(val_loss)
         wandb.log({"Validation Loss": round(val_loss, 2)})
@@ -211,7 +207,7 @@ def main():
 
         # Calculate Validation RMSE
         rmse = root_mean_squared_error(y_val, y_pred)
-        rmses.append(rmse)
+        val_rmses.append(rmse)
         wandb.log({"Validation RMSE": round(rmse, 2)})
 
         # save the model
@@ -219,11 +215,13 @@ def main():
         
         # Evaluate the model on the test set and log loss
         test_loss = model.evaluate(X_test, y_test)
-        y_test_pred = model.predict(X_test)
+        test_losses.append(test_loss)
         wandb.log({'Test Loss': round(test_loss, 2)})
 
         # Calculate RMSE for the test set and log it
+        y_test_pred = model.predict(X_test)
         test_rmse = root_mean_squared_error(y_test, y_test_pred)
+        test_rmses.append(test_rmse)
         wandb.log({'Test RMSE': round(test_rmse, 2)})
 
         # Plot y_pred and y_test as a dot plot for the test set
@@ -255,14 +253,18 @@ def main():
 
     # Calculate average validation loss and RMSE
     avg_val_loss = np.mean(val_losses)
-    avg_rmse = np.mean(rmses)
+    avg_val_rmse = np.mean(val_rmses)
+    avg_test_loss = np.mean(test_losses)
+    avg_test_rmse = np.mean(test_rmses)
     print(f"Average Validation Loss: {avg_val_loss}")
-    print(f"Average RMSE: {avg_rmse}")
+    print(f"Average Test Loss: {avg_test_loss}")
+    print(f"Average Validation RMSE: {avg_val_rmse}")
+    print(f"Average Test RMSE: {avg_test_rmse}")
     # best fold
     best_fold_loss = np.argmin(val_losses) + 1
-    print(f"Best Fold according to loss: {best_fold_loss}")
-    best_fold_rmse = np.argmin(rmses) + 1
-    print(f"Best Fold according to RMSE: {best_fold_rmse}")
+    print(f"Best Fold according to validation loss: {best_fold_loss}")
+    best_fold_rmse = np.argmin(val_rmses) + 1
+    print(f"Best Fold according to validation RMSE: {best_fold_rmse}")
 
     '''# Plot histogram of model weights per layer
     for layer in model.layers:
@@ -274,7 +276,12 @@ def main():
             plt.xlabel('Weight Value')
             plt.ylabel('Frequency')
             plt.show()'''
+    
+    # Log the aggregate metrics under the group
+    wandb.init(project="Flexiforce_Xsens_Leopard24", group=os.environ["WANDB_RUN_GROUP"], name="k_fold_summary")
+    wandb.log({"avg_val_loss": avg_val_loss, "avg_test_loss": avg_test_loss, "avg_val_rmse": avg_val_rmse, "avg_test_rmse": avg_test_rmse})
+    wandb.save("main.py")
+    wandb.finish()
 
 if __name__ == "__main__":
-    print("main.py is being run directly")
     main()

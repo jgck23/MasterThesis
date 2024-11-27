@@ -3,7 +3,7 @@ from sklearn.model_selection import train_test_split, GroupShuffleSplit
 from sklearn.neighbors import KNeighborsRegressor 
 from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay, root_mean_squared_error 
 from sklearn.decomposition import PCA
-from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import StandardScaler, MinMaxScaler
 import pandas as pd
 import csv
 import matplotlib.pyplot as plt
@@ -12,11 +12,13 @@ from sklearn.model_selection import cross_validate
 
 # Load the data
 #data, name_mat = load_data()
-data= pd.read_csv('Data/Dataset_Leopard24.csv', sep=',')
+fileName='Data/241121_Dataset_Leopard24.csv'
+data= pd.read_csv(fileName , sep=',', header=None)
+#data=data[data.iloc[:, -1] > 500]
 
 # Split the data into features and target
-X = data.iloc[:, 1:-4].values  # All features 
-y = data.iloc[:, -3].values  # 101th column, elbow flexion angle
+X = data.iloc[:, 1:-5].values  # All features 
+y = data.iloc[:, -4].values  # 101th column, elbow flexion angle
 trial_ids = data.iloc[:, 0].values  # 1st column, trial IDs
 
 # Initialize GroupShuffleSplit
@@ -30,7 +32,6 @@ for train_index, test_index in gss.split(X, y, groups=trial_ids):
 
 # Standardize the data
 scaler_x = StandardScaler()
-scaler_y = StandardScaler()
 X_train = scaler_x.fit_transform(X_train)
 X_test = scaler_x.transform(X_test)
 

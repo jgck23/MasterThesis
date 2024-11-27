@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 
 
 def main():
-    folder_path = "/Users/jacob/Documents/Microsoft Visual Studio Code Projects/Masterarbeit/Data/Foot Sensor Force Data/241113_Leopard24"
+    folder_path = "/Users/jacob/Documents/Microsoft Visual Studio Code Projects/Masterarbeit/Data/Foot Sensor Force Data/241121_Leopard24"
     # sensor data already has cut off for minimum values (S.Helmstetter)
     file_names = [
         f
@@ -41,13 +41,13 @@ def main():
     # save the data to a csv file
     df = pd.DataFrame(NNarray)
     df.to_csv(
-        "Data/Foot Sensor Force Data/241113_Leopard24_FSensor.csv",
+        "Data/Foot Sensor Force Data/241121_Leopard24_FSensor.csv",
         index=False,
         header=False,
     )
     df = pd.DataFrame(N_frames)
     df.to_csv(
-        "Data/Foot Sensor Force Data/241113_Leopard24_N_frames_FSensor.csv",
+        "Data/Foot Sensor Force Data/241121_Leopard24_N_frames_FSensor.csv",
         index=False,
         header=False,
     )
