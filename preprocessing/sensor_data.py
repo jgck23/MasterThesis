@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 
 
 def main():
-    folder_path = "/Users/jacob/Documents/Microsoft Visual Studio Code Projects/Masterarbeit/Data/Foot Sensor Force Data/241121_Leopard24"
+    folder_path = "/Users/jacob/Documents/Microsoft Visual Studio Code Projects/Masterarbeit/Data/Foot Sensor Force Data/241113_Leopard24"
     # sensor data already has cut off for minimum values (S.Helmstetter)
     file_names = [
         f
@@ -38,16 +38,27 @@ def main():
     # print(f"Zero columns: {zero_column}")
     NNarray = np.delete(NNarray, zero_column, axis=1)
 
+    #create additional features
+    
+    # Add the mean of each row to the last column
+    row_means = np.round(NNarray.mean(axis=1, keepdims=True), 2)
+
+    # Count all values in a row that are greater than zero and add the count to the last column
+    activated_sensels = np.sum(NNarray > 0, axis=1, keepdims=True)
+
+    NNarray = np.hstack((NNarray, row_means))
+    NNarray = np.hstack((NNarray, activated_sensels))
+
     # save the data to a csv file
     df = pd.DataFrame(NNarray)
     df.to_csv(
-        "Data/Foot Sensor Force Data/241121_Leopard24_FSensor.csv",
+        "Data/Foot Sensor Force Data/241113_Leopard24_FSensor.csv",
         index=False,
         header=False,
     )
     df = pd.DataFrame(N_frames)
     df.to_csv(
-        "Data/Foot Sensor Force Data/241121_Leopard24_N_frames_FSensor.csv",
+        "Data/Foot Sensor Force Data/241113_Leopard24_N_frames_FSensor.csv",
         index=False,
         header=False,
     )

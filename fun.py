@@ -59,3 +59,10 @@ def set_regularizer(regularizer, l1=0.01, l2=0.01):
         return tf.keras.regularizers.L1L2(l1, l2)
     else:
         raise ValueError("Invalid regularizer")
+    
+def data_leakage(trial_ids, train_index, test_index):
+    train_trials = set(trial_ids[train_index])
+    test_trials = set(trial_ids[test_index])
+    common_trials = train_trials.intersection(test_trials)
+    if common_trials:
+        return ValueError(f"Trial leakage detected between train and test sets for trials: {common_trials}")

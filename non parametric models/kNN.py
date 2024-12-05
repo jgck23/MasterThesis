@@ -12,17 +12,18 @@ from sklearn.model_selection import cross_validate
 
 # Load the data
 #data, name_mat = load_data()
-fileName='Data/241121_Dataset_Leopard24.csv'
+fileName='NN_Bachelor_Thesis/ba_trials.csv'
+#fileName='Data/241121_Dataset_Leopard24.csv'
 data= pd.read_csv(fileName , sep=',', header=None)
 #data=data[data.iloc[:, -1] > 500]
 
 # Split the data into features and target
-X = data.iloc[:, 1:-5].values  # All features 
-y = data.iloc[:, -4].values  # 101th column, elbow flexion angle
+X = data.iloc[:, 1:-1].values  # All features 
+y = data.iloc[:, -1].values  # 101th column, elbow flexion angle
 trial_ids = data.iloc[:, 0].values  # 1st column, trial IDs
 
 # Initialize GroupShuffleSplit
-gss = GroupShuffleSplit(n_splits=1, test_size=0.2, random_state=42)
+gss = GroupShuffleSplit(n_splits=1, test_size=0.2, random_state=21)
 
 # Split the data
 for train_index, test_index in gss.split(X, y, groups=trial_ids):

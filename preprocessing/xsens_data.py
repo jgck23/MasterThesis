@@ -6,13 +6,13 @@ from scipy.signal.windows import gaussian
 from scipy.signal import convolve
 
 def main():
-    folder_path = '/Users/jacob/Documents/Microsoft Visual Studio Code Projects/Masterarbeit/Data/Xsens Data/241121_Leopard24'
+    folder_path = '/Users/jacob/Documents/Microsoft Visual Studio Code Projects/Masterarbeit/Data/Xsens Data/241113_Leopard24'
     file_names = [f for f in os.listdir(folder_path) if os.path.isfile(os.path.join(folder_path, f)) and f.endswith('.csv')]
     file_names = sorted(file_names)
     print(f'These files will be vertically concatenated in the following order: {file_names}')
     NN = []
     # load the number of frames for each trial from the pressure sensor and check if trial count matches
-    N_frames = np.loadtxt('Data/Foot Sensor Force Data/241121_Leopard24_N_frames_FSensor.csv', delimiter=',')
+    N_frames = np.loadtxt('Data/Foot Sensor Force Data/241113_Leopard24_N_frames_FSensor.csv', delimiter=',')
     if len(N_frames) != len(file_names):
         raise ValueError("The number of trials in the sensor data and the Xsens data do not match.")
     
@@ -32,7 +32,7 @@ def main():
 
     # save the data to a csv file
     df = pd.DataFrame(NNarray)
-    df.to_csv('Data/Xsens Data/241121_Leopard24_Xsens.csv', index=False, header=False)
+    df.to_csv('Data/Xsens Data/241113_Leopard24_Xsens.csv', index=False, header=False)
 
 def load_data(file_path):
     # read the data from the given csv file and store it in a list of arrays

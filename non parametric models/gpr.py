@@ -1,18 +1,21 @@
-from fun import load_data
+#from fun import load_data
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import GroupShuffleSplit
 from sklearn.gaussian_process import GaussianProcessRegressor
 from sklearn.gaussian_process.kernels import RBF, ConstantKernel as C
-from sklearn.metrics import root_mean_squared_error
+from sklearn.metrics import root_mean_squared_error, r2_score
 import matplotlib.pyplot as plt
+import pandas as pd
 
 # Load the data
-data, name_mat = load_data()
+#data, name_mat = load_data()
+fileName='Data/241113_Dataset_Leopard24.csv'
+data = pd.read_csv(fileName, sep=',', header=None)
 
 # Split the data into features and target
-X = data.iloc[:, 1:101].values  # All features, columns 1 to 100
-y = data.iloc[:, 101].values  # 101th column, elbow flexion angle
-trial_ids = data.iloc[:, 0].values  # 1st column, trial IDs
+X = data.iloc[:, 1:-5].values 
+y = data.iloc[:, -4].values  
+trial_ids = data.iloc[:, 0].values 
 
 # Initialize GroupShuffleSplit
 gss = GroupShuffleSplit(n_splits=1, test_size=0.2, random_state=42)
@@ -30,7 +33,8 @@ X_train = scaler_x.fit_transform(X_train)
 X_test = scaler_x.transform(X_test)
 
 # Define the kernel
-kernel = C(1.0, (1e-4, 1e1)) * RBF(1.0, (1e-4, 1e1))
+#kernel = C(1.0, (1e-4, 1e1)) * RBF(1.0, (1e-4, 1e1))
+kernel = RBF(length_scale=1.0)
 
 # Initialize GaussianProcessRegressor
 gpr = GaussianProcessRegressor(kernel=kernel, n_restarts_optimizer=10, alpha=1e-2)
@@ -42,8 +46,12 @@ gpr.fit(X_train, y_train)
 y_pred, sigma = gpr.predict(X_test, return_std=True)
 testing_rmse = root_mean_squared_error(y_test, y_pred)
 training_rmse=root_mean_squared_error(y_train, gpr.predict(X_train))
+training_r2=r2_score(y_train, gpr.predict(X_train))
+testing_r2=r2_score(y_test, y_pred)
 print("training rmse:", training_rmse)
 print("testing rmse:", testing_rmse)
+print("training r2:", training_r2)
+print("testing r2:", testing_r2)
 
 # Plot y_pred and y_test as a dot plot for the test set
 plt.figure(figsize=(10, 6))
