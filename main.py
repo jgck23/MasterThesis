@@ -8,7 +8,6 @@ from sklearn.model_selection import (
 from sklearn.preprocessing import StandardScaler, MinMaxScaler, RobustScaler, QuantileTransformer
 from sklearn.feature_selection import VarianceThreshold
 import tensorflow as tf
-
 # from keras.models import Sequential
 from keras.models import Sequential
 from keras.layers import Dense, Dropout, Input, GRU
@@ -17,7 +16,7 @@ from sklearn.metrics import root_mean_squared_error, r2_score
 import matplotlib.pyplot as plt
 import os
 import wandb
-from fun import load_data, set_optimizer, set_regularizer, data_leakage
+from fun import load_data, set_optimizer, set_regularizer, data_leakage, plot_y
 from wandb.integration.keras import (
     WandbMetricsLogger,
     WandbModelCheckpoint,
@@ -29,19 +28,16 @@ os.environ["WANDB_RUN_GROUP"] = "experiment-" + wandb.util.generate_id()
 def main():
     # Load the data
     #fileName='Data/241113_Dataset_Leopard24.csv'
-    fileName='NN_Bachelor_Thesis/ba_trials.csv'
+    fileName='NN_Bachelor_Thesis/ba_trials_extra.csv'
     data = pd.read_csv(fileName, sep=',', header=None)
 
     print(np.shape(data))
-
-    #plt.plot(data.iloc[:, -1])
-    #plt.show()
 
     height_preprocess = 0 # 1: upper trials only, -1: lower trials only, 0: all trials
     #data=data[data.iloc[:, -1] > 500] # watch out, this can lead to new all zero columns
 
     # Split the data into features and target
-    X = data.iloc[:, 1:-1].values  # All features, the last 5 columns are not features
+    X = data.iloc[:, 1:-2].values  # All features, the last 5 columns are not features
     y = data.iloc[:, -1].values  # -5: wrist angle(x), -4: elbow angle(z), -3: shoulder flexion, -2: shoulder abduction, -1: Z-coordinate of right hand (height)
     trial_ids = data.iloc[:, 0].values  # 1st column, trial IDs
 
@@ -62,20 +58,20 @@ def main():
     for train_index, test_index in gss.split(X, y, groups=trial_ids):
         X_train, X_test = X[train_index], X[test_index]
         y_train, y_test = y[train_index], y[test_index]
-        trial_ids_train = data.iloc[train_index, 0].values
+        trial_ids_train, trial_ids_test = trial_ids[train_index], trial_ids[test_index]
 
     # Check for trial leakage in train/test split
     data_leakage(trial_ids, train_index, test_index)
 
     # Standardize the data
     scaler_x = MinMaxScaler() #minmax when the features are on the same scale, standard scaler when they are not
-    target_scaler = StandardScaler()
+    #target_scaler = StandardScaler()
     X_train = scaler_x.fit_transform(X_train)
     X_test = scaler_x.transform(X_test)
-    y_train = target_scaler.fit_transform(y_train.reshape(-1, 1))
-    y_test = target_scaler.transform(y_test.reshape(-1, 1))
-
-    #'''
+    #y_train = target_scaler.fit_transform(y_train.reshape(-1, 1))
+    #y_test = target_scaler.transform(y_test.reshape(-1, 1))
+    
+    
     plt.hist(y_train, bins=100)
     plt.show()
 
@@ -83,7 +79,7 @@ def main():
     plt.show()
 
     plt.plot(X_test[:,1:-5])
-    plt.show()#'''
+    plt.show()
 
     # Implement 5-fold cross-validation on the training+validation set
     gkf = GroupKFold(n_splits=3)
@@ -101,7 +97,7 @@ def main():
 
         # Start a run, tracking hyperparameters
         wandb.init(
-            project="Flexiforce_Xsens_Leopard24", # set the wandb project where this run will be logged
+            project="BA_NN", # set the wandb project where this run will be logged
             group=os.environ["WANDB_RUN_GROUP"], # group the runs together
             job_type="eval", #job type
             # track hyperparameters and run metadata with wandb.config
@@ -160,7 +156,7 @@ def main():
             )
         )
         #model.add(Dropout(config.dropout))
-        #'''
+        #
         model.add(
             Dense(
                 config.layer_3,
@@ -169,7 +165,7 @@ def main():
                 #kernel_regularizer=set_regularizer(config.regularizer, config.l1),
             )
         )
-        #model.add(Dropout(config.dropout))#'''
+        #model.add(Dropout(config.dropout))#
         model.add(Dense(1))#, activation = 'linear', kernel_initializer='GlorotUniform'))#, activation="relu"))
 
         # Compile the model
@@ -254,35 +250,10 @@ def main():
         wandb.log({'Test RMSE': round(test_rmse, 2)})
         wandb.log({'Test R2 score': round(test_r2, 2)})
 
-        # Plot y_pred and y_test as a dot plot for the test set
-        plt.figure(figsize=(10, 6))
-        plt.scatter(y_test, y_test_pred, alpha=0.5, label="Predicted vs Actual")
-        plt.plot(
-            [min(y_test), max(y_test)],
-            [min(y_test), max(y_test)],
-            color="red",
-            label="Ideal Line",
-        )
-        plt.xlabel("Actual Values")
-        plt.ylabel("Predicted Values")
-        plt.title("Actual vs Predicted Values")
-        plt.legend()
-        wandb.log({"Actual vs Predicted Values for test set": plt})
-        plt.close()
-
-        print(np.shape(y_test_pred))
-        print(np.shape(y_test))
-
-        #Plot a residual plot
-        plt.figure(figsize=(10, 6))
-        plt.scatter(y_test_pred.flatten(), y_test_pred.flatten() - y_test.flatten(), alpha=0.5, label="Residual Plot")
-        plt.axhline(y=0, color="red", label="Ideal Line")
-        plt.xlabel("Predicted Values")
-        plt.ylabel("Residuals")
-        plt.title("Residual Plot")
-        plt.legend()
-        wandb.log({"Residual Plot": plt})
-        plt.close()
+        plot1, plot2, plot3 = plot_y(y_test, y_test_pred, trial_ids_test)
+        wandb.log({"Actual vs Predicted Values for test set": plot1})
+        wandb.log({"Residual Plot": plot2})
+        wandb.log({"Actual and Predicted Values line plot": plot3})
 
         '''# Create SHAP explainer
         explainer = shap.Explainer(model, X_test)
@@ -313,7 +284,6 @@ def main():
         print(f"Fold {fold} - Validation R2 score: {r2}")
         print(f"Fold {fold} - Test R2 score: {test_r2}")
         
-
         # [optional] finish the wandb run, necessary in notebooks
         wandb.finish()
 
@@ -339,7 +309,7 @@ def main():
     print(f"Best Fold according to validation RMSE: {best_fold_rmse}")
     
     # Log the aggregate metrics under the group
-    wandb.init(project="Flexiforce_Xsens_Leopard24", group=os.environ["WANDB_RUN_GROUP"], name="k_fold_summary")
+    wandb.init(project="BA_NN", group=os.environ["WANDB_RUN_GROUP"], name="k_fold_summary")
     wandb.log({"avg_val_loss": avg_val_loss, "avg_test_loss": avg_test_loss, "avg_val_rmse": avg_val_rmse, "avg_test_rmse": avg_test_rmse, "avg_val_R2_score": avg_val_R2_score, "avg_test_R2_score": avg_test_R2_score, "best_fold_loss": best_fold_loss, "best_fold_rmse": best_fold_rmse})
     wandb.save("main.py")
     wandb.finish()

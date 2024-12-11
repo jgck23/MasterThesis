@@ -2,6 +2,8 @@ import scipy.io
 import glob
 import pandas as pd
 import tensorflow as tf
+import matplotlib.pyplot as plt
+import numpy as np
 
 def load_data(userinput=None):
     while True:
@@ -66,3 +68,62 @@ def data_leakage(trial_ids, train_index, test_index):
     common_trials = train_trials.intersection(test_trials)
     if common_trials:
         return ValueError(f"Trial leakage detected between train and test sets for trials: {common_trials}")
+    
+def plot_y(y_true, y_pred, trial_ids_test):
+    # Plot y_pred and y_test as a dot plot for the test set
+    # Create a colormap for unique trial IDs
+    unique_trials = np.unique(trial_ids_test)
+    colors = plt.cm.gist_ncar(np.linspace(0, 1, len(unique_trials)))  #color map
+
+    fig1=plt.figure(figsize=(10, 6))
+    for trial_id, color in zip(unique_trials, colors):
+        # Mask to select data points for the current trial
+        mask = trial_ids_test == trial_id
+        fig1=plt.scatter(
+            y_true[mask], 
+            y_pred[mask], 
+            alpha=0.5, 
+            #label=f"Trial {trial_id}", 
+            color=color
+        )
+    fig1=plt.plot(
+        [min(y_true), max(y_true)],
+        [min(y_true), max(y_true)],
+        color="red",
+        #label="Ideal Line",
+    )
+    fig1=plt.xlabel("Actual Values")
+    fig1=plt.ylabel("Predicted Values")
+    fig1=plt.title("Actual vs Predicted Values")
+    #fig1=plt.legend()
+
+    #Plot a residual plot
+    fig2=plt.figure(figsize=(10, 6))
+    for trial_id, color in zip(unique_trials, colors):
+        # Mask to select data points for the current trial
+        mask = trial_ids_test == trial_id
+        fig2=plt.scatter(
+            y_pred[mask].flatten(), 
+            y_pred[mask].flatten()-y_true[mask].flatten(), 
+            alpha=0.5, 
+            #label=f"Trial {trial_id}", 
+            color=color
+        )
+    fig2=plt.axhline(y=0, color="red", linestyle="--", linewidth=2)
+    fig2=plt.xlabel("Predicted Values")
+    fig2=plt.ylabel("Residuals")
+    fig2=plt.title("Residual Plot")
+    fig2=plt.legend()
+
+    #plot y_true and y_pred as a line plot
+    fig3=plt.figure(figsize=(10, 6))
+    for trial_id, color in zip(unique_trials, colors):
+        # Mask to select data points for the current trial
+        mask = trial_ids_test == trial_id
+        fig3=plt.plot(np.where(mask)[0], y_true[mask], color=color, label="Actual Values", linestyle="--")
+        fig3=plt.plot(np.where(mask)[0], y_pred[mask], color=color, label="Predicted Values")
+    fig3=plt.xlabel("Data Points")
+    fig3=plt.ylabel("Values")
+    fig3=plt.title("Actual and Predicted Values Line Plot")
+
+    return fig1, fig2, fig3

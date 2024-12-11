@@ -6,15 +6,17 @@ from sklearn.gaussian_process.kernels import RBF, ConstantKernel as C
 from sklearn.metrics import root_mean_squared_error, r2_score
 import matplotlib.pyplot as plt
 import pandas as pd
+from sklearn.gaussian_process.kernels import ExpSineSquared
 
 # Load the data
 #data, name_mat = load_data()
-fileName='Data/241113_Dataset_Leopard24.csv'
+#fileName='Data/241113_Dataset_Leopard24.csv'
+fileName='NN_Bachelor_Thesis/ba_trials_extra.csv'
 data = pd.read_csv(fileName, sep=',', header=None)
 
 # Split the data into features and target
-X = data.iloc[:, 1:-5].values 
-y = data.iloc[:, -4].values  
+X = data.iloc[:, 1:-2].values 
+y = data.iloc[:, -1].values  
 trial_ids = data.iloc[:, 0].values 
 
 # Initialize GroupShuffleSplit
@@ -28,16 +30,18 @@ for train_index, test_index in gss.split(X, y, groups=trial_ids):
 
 # Standardize the data
 scaler_x = StandardScaler()
-scaler_y = StandardScaler()
+#scaler_y = StandardScaler()
 X_train = scaler_x.fit_transform(X_train)
 X_test = scaler_x.transform(X_test)
 
 # Define the kernel
 #kernel = C(1.0, (1e-4, 1e1)) * RBF(1.0, (1e-4, 1e1))
-kernel = RBF(length_scale=1.0)
+#kernel = RBF(length_scale=1.0)
+# Define the exponential kernel
+kernel = ExpSineSquared(length_scale=1.0, periodicity=3.0)
 
 # Initialize GaussianProcessRegressor
-gpr = GaussianProcessRegressor(kernel=kernel, n_restarts_optimizer=10, alpha=1e-2)
+gpr = GaussianProcessRegressor(kernel=kernel, n_restarts_optimizer=3, alpha=1e-2)
 
 # Fit to the training data
 gpr.fit(X_train, y_train)
@@ -65,5 +69,10 @@ plt.plot(
 plt.xlabel("Actual Values")
 plt.ylabel("Predicted Values")
 plt.title("Actual vs Predicted Values")
+plt.legend()
+plt.show()
+
+plt.plot(y_test, label='Actual')
+plt.plot(y_pred, label='Predicted')
 plt.legend()
 plt.show()

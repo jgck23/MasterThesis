@@ -1,7 +1,7 @@
-'''import pandas as pd
+import pandas as pd
 import numpy as np
 
-data = pd.read_csv('NN_Bachelor_Thesis/et.csv', sep=';', header=None)
+data = pd.read_csv('NN_Bachelor_Thesis/et_extra.csv', sep=';', header=None)
 
 length = data.shape[0]
 trials= length /900
@@ -15,4 +15,4 @@ for i in range(int(trials)+1):
 result = np.hstack((trial_num, data.values))
 result = pd.DataFrame(result)
 
-result.to_csv('NN_Bachelor_Thesis/ba_trials.csv', index=False, header=False)'''
+result.to_csv('NN_Bachelor_Thesis/ba_trials_extra.csv', index=False, header=False)

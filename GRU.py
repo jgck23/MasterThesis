@@ -38,6 +38,7 @@ def main():
     for train_index, test_index in gss.split(X, y, groups=trial_ids):
         X_train, X_test = X[train_index], X[test_index]
         y_train, y_test = y[train_index], y[test_index]
+        trial_ids_train, trial_ids_test = trial_ids[train_index], trial_ids[test_index]
 
     # Check for trial leakage in train/test split
     data_leakage(trial_ids, train_index, test_index)
@@ -59,7 +60,7 @@ def main():
     y_test_list = [y_test[i:i + 900] for i in range(0, len(y_test), 900)]
 
     X_train, X_test, y_train, y_test = np.array(X_train_list), np.array(X_test_list), np.array(y_train_list), np.array(y_test_list)
-
+    
     plt.hist(y_train.flatten(),bins=100)
     plt.show()
     plt.hist(y_test.flatten(),bins=100)
@@ -98,7 +99,7 @@ def main():
                 #"activation_3": "relu",  # relu, sigmoid, tanh, softmax, softplus, softsign, selu, elu, exponential
                 "optimizer": "adam",  # adam, sgd, rmsprop, adagrad, adadelta, adamax, nadam, adamw
                 "learning_rate": 0.001,
-                "loss": "mean_squared_error",
+                "loss": "mean_absolute_error",
                 "Dropout": 0.15,
                 "epoch": 1000,
                 "batch_size": 10,  # 20
@@ -261,6 +262,39 @@ def main():
     wandb.log({"avg_val_loss": avg_val_loss, "avg_test_loss": avg_test_loss, "avg_val_rmse": avg_val_rmse, "avg_test_rmse": avg_test_rmse, "avg_val_R2_score": avg_val_R2_score, "avg_test_R2_score": avg_test_R2_score, "best_fold_loss": best_fold_loss, "best_fold_rmse": best_fold_rmse})
     wandb.save("GRU.py")
     wandb.finish()
+    
+    model=tf.keras.models.load_model("best_model_2.keras")
+    i=12 #max 19 for test size 20%
+
+    sample=X_test[i,:,:]
+    sample=sample.reshape(1,900,11)
+    y_pred = model.predict(sample)
+    y_pred = np.squeeze(y_pred)
+
+    y_testw=y_test[i].flatten()
+    y_pred=y_pred.flatten()
+    y_testw=y_testw.reshape(-1,1)
+    y_pred=y_pred.reshape(-1,1)
+    y_testw=scaler_y.inverse_transform(y_testw)
+    y_pred=scaler_y.inverse_transform(y_pred)
+
+    plt.plot(y_testw, label='Actual')
+    plt.plot(y_pred, label='Predicted')
+    plt.legend()
+    plt.show()
+
+    y_pred = model.predict(X_test)
+    y_pred = np.squeeze(y_pred)
+    y_pred = y_pred.flatten()
+    y_test = y_test.flatten()
+    y_pred = y_pred.reshape(-1, 1)
+    y_test = y_test.reshape(-1, 1)
+    y_pred = scaler_y.inverse_transform(y_pred)
+    y_test = scaler_y.inverse_transform(y_test)
+    plt.plot(y_test, label='Actual')
+    plt.plot(y_pred, label='Predicted')
+    plt.legend()
+    plt.show()
 
 if __name__ == "__main__":
     main()
