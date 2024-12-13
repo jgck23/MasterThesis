@@ -4,17 +4,17 @@ import numpy as np
 from scipy.signal.windows import gaussian
 from scipy.signal import convolve
 import matplotlib.pyplot as plt
+from natsort import natsorted
 
-
-def main():
-    folder_path = "/Users/jacob/Documents/Microsoft Visual Studio Code Projects/Masterarbeit/Data/Foot Sensor Force Data/241113_Leopard24"
+def main(folder_path):
+    folder_path = "/Users/jacob/Documents/Microsoft Visual Studio Code Projects/Masterarbeit/Data/Foot Sensor Force Data/241212_Leopard24"
     # sensor data already has cut off for minimum values (S.Helmstetter)
     file_names = [
         f
         for f in os.listdir(folder_path)
         if os.path.isfile(os.path.join(folder_path, f)) and f.endswith(".csv")
     ]
-    file_names = sorted(file_names)
+    file_names = natsorted(file_names)
     print(
         f"These files will be vertically concatenated in the following order: {file_names}"
     )
@@ -26,42 +26,33 @@ def main():
         # load the data from the file
         data = load_data(file_path)
         # smooth the data per trial
-        data = smooth_data(data, f_cutoff=7, recording_frequency=60)
+        data = smooth_data(data, f_cutoff=5, recording_frequency=60)
         data = np.insert(data, 0, i + 1, axis=1)  # add trial count
+        
+        #Add mean of each row and count of activated sensels to the last columns
+        row_means = np.round(data.mean(axis=1, keepdims=True), 2)
+        activated_sensels = np.sum(data > 0, axis=1, keepdims=True)
+        data = np.hstack((data, row_means))
+        data = np.hstack((data, activated_sensels))
 
         N_frames.append(data.shape[0])
         NN.append(data)
 
-    # delete columns filled with zeros, no information
-    NNarray = np.vstack(NN)
-    zero_column = [i for i in range(NNarray.shape[1]) if np.all(NNarray[:, i] == 0)]
-    # print(f"Zero columns: {zero_column}")
-    NNarray = np.delete(NNarray, zero_column, axis=1)
-
-    #create additional features
-    
-    # Add the mean of each row to the last column
-    row_means = np.round(NNarray.mean(axis=1, keepdims=True), 2)
-
-    # Count all values in a row that are greater than zero and add the count to the last column
-    activated_sensels = np.sum(NNarray > 0, axis=1, keepdims=True)
-
-    NNarray = np.hstack((NNarray, row_means))
-    NNarray = np.hstack((NNarray, activated_sensels))
-
     # save the data to a csv file
-    df = pd.DataFrame(NNarray)
-    df.to_csv(
-        "Data/Foot Sensor Force Data/241113_Leopard24_FSensor.csv",
+    #df1 = pd.DataFrame(NNarray)
+    '''df.to_csv(
+        "Data/Foot Sensor Force Data/241212_Leopard24_FSensor.csv",
         index=False,
         header=False,
-    )
-    df = pd.DataFrame(N_frames)
-    df.to_csv(
-        "Data/Foot Sensor Force Data/241113_Leopard24_N_frames_FSensor.csv",
+    )'''
+    #df2 = pd.DataFrame(N_frames)
+    '''df.to_csv(
+        "Data/Foot Sensor Force Data/241212_Leopard24_N_frames_FSensor.csv",
         index=False,
         header=False,
-    )
+    )'''
+
+    return NN, N_frames
 
 
 def load_data(file_path):
@@ -70,9 +61,10 @@ def load_data(file_path):
     currentframe = []
     start_there = False
     with open(file_path, "r") as file:
-        for line in file:
-            line = line.strip()
-            if line.startswith("ASCII_DATA @@"):
+        lines = file.readlines()[:-1]  # Exclude the last line because of '@@'
+        for line in lines: #iterate line for line through the file
+            line = line.strip() #removes leading and trailing whitespaces
+            if line.startswith("ASCII_DATA @@"): #check when the data starts
                 start_there = True
                 continue
 
@@ -80,16 +72,16 @@ def load_data(file_path):
                 continue
             else:
                 if line.startswith("Frame"):
-                    if currentframe:
+                    if currentframe: #checks if the current frame is not empty, so for the first frame this is skipped 
                         frame_array = np.array(currentframe, dtype=int)
                         sensordata.append(frame_array)
                         currentframe = []
-                elif line and line.startswith(("0", "B")):
+                elif line: #line.startswith(("0", "B"))
                     # Process the current row, converting 'B' to 9999 to filter it out later
-                    row = [9999 if val == "B" else int(val) for val in line.split(",")]
-                    currentframe.append(row)
+                    row = [9999 if val == "B" else int(val) for val in line.split(",")] #writes the values of each line split by ',' in 'row' and filters for 'B'
+                    currentframe.append(row) #appends the row to the current frame
 
-    if currentframe:
+    if currentframe: #appends the last frame to sensordata
         frame_array = np.array(currentframe, dtype=int)
         sensordata.append(frame_array)
 

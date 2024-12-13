@@ -4,38 +4,42 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.signal.windows import gaussian
 from scipy.signal import convolve
+from natsort import natsorted
 
-def main():
-    folder_path = '/Users/jacob/Documents/Microsoft Visual Studio Code Projects/Masterarbeit/Data/Xsens Data/241113_Leopard24'
+def main(folder_path):
+    
     file_names = [f for f in os.listdir(folder_path) if os.path.isfile(os.path.join(folder_path, f)) and f.endswith('.csv')]
-    file_names = sorted(file_names)
+    file_names = natsorted(file_names)
     print(f'These files will be vertically concatenated in the following order: {file_names}')
     NN = []
-    # load the number of frames for each trial from the pressure sensor and check if trial count matches
-    N_frames = np.loadtxt('Data/Foot Sensor Force Data/241113_Leopard24_N_frames_FSensor.csv', delimiter=',')
-    if len(N_frames) != len(file_names):
-        raise ValueError("The number of trials in the sensor data and the Xsens data do not match.")
+    N_frames = []
     
-    print(len(file_names))
     # iterate over all files in the folder and append the data to the list, also cut the xsens data accordingly
     for i in range(len(file_names)):
         file_path = os.path.join(folder_path, file_names[i])
         data = load_data(file_path)
-        if data.shape[0] < N_frames[i]:
-            raise ValueError(f'Number of Xsens frames from file: {file_names[i]} is smaller than the number of sensor frames. Manually remove the sensor data and the xsens data.')
-        data = data[:int(N_frames[i])] # cut the xsens data to match the sensor data
+        #if data.shape[0] < N_frames[i]:
+        #    raise ValueError(f'Number of Xsens frames from file: {file_names[i]} is smaller than the number of sensor frames. Manually remove the sensor data and the xsens data.')
+        #data = data[:int(N_frames[i])] # cut the xsens data to match the sensor data
         data = np.array(data, dtype=float)
         data = smooth_data(data, f_cutoff=5, recording_frequency=60)
+        #data = np.insert(data, 0, i + 1, axis=1)  # add trial count
+        N_frames.append(data.shape[0])
         NN.append(data)
     
-    NNarray = np.vstack(NN)
+    #NNarray = np.vstack(NN)
 
     # save the data to a csv file
-    df = pd.DataFrame(NNarray)
-    df.to_csv('Data/Xsens Data/241113_Leopard24_Xsens.csv', index=False, header=False)
+    #df1 = pd.DataFrame(NNarray)
+    #df2 = pd.DataFrame(N_frames)
+    #df.to_csv('Data/Xsens Data/241212_Leopard24_Xsens.csv', index=False, header=False)
+
+    return NN, N_frames
 
 def load_data(file_path):
     # read the data from the given csv file and store it in a list of arrays
+    '''df = pd.read_csv(file_path, header=None)
+    array = df.values  # convert the dataframe to a numpy array'''
     trial = []
     with open(file_path, 'r') as file:
         for line in file:

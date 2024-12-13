@@ -4,6 +4,8 @@ import pandas as pd
 import tensorflow as tf
 import matplotlib.pyplot as plt
 import numpy as np
+import plotly.express as px
+import plotly.graph_objects as go
 
 def load_data(userinput=None):
     while True:
@@ -79,51 +81,78 @@ def plot_y(y_true, y_pred, trial_ids_test):
     for trial_id, color in zip(unique_trials, colors):
         # Mask to select data points for the current trial
         mask = trial_ids_test == trial_id
-        fig1=plt.scatter(
+        plt.scatter(
             y_true[mask], 
             y_pred[mask], 
             alpha=0.5, 
             #label=f"Trial {trial_id}", 
             color=color
         )
-    fig1=plt.plot(
+    plt.plot(
         [min(y_true), max(y_true)],
         [min(y_true), max(y_true)],
         color="red",
         #label="Ideal Line",
     )
-    fig1=plt.xlabel("Actual Values")
-    fig1=plt.ylabel("Predicted Values")
-    fig1=plt.title("Actual vs Predicted Values")
-    #fig1=plt.legend()
+    plt.xlabel("Actual Values")
+    plt.ylabel("Predicted Values")
+    plt.title("Actual vs Predicted Values")
 
     #Plot a residual plot
     fig2=plt.figure(figsize=(10, 6))
     for trial_id, color in zip(unique_trials, colors):
         # Mask to select data points for the current trial
         mask = trial_ids_test == trial_id
-        fig2=plt.scatter(
-            y_pred[mask].flatten(), 
+        plt.scatter(
+            y_true[mask].flatten(), 
             y_pred[mask].flatten()-y_true[mask].flatten(), 
             alpha=0.5, 
             #label=f"Trial {trial_id}", 
             color=color
         )
-    fig2=plt.axhline(y=0, color="red", linestyle="--", linewidth=2)
-    fig2=plt.xlabel("Predicted Values")
-    fig2=plt.ylabel("Residuals")
-    fig2=plt.title("Residual Plot")
-    fig2=plt.legend()
+    plt.axhline(y=0, color="red", linestyle="--", linewidth=2)
+    plt.xlabel("True Values")
+    plt.ylabel("Residuals")
+    plt.title("Residual Plot")
 
     #plot y_true and y_pred as a line plot
     fig3=plt.figure(figsize=(10, 6))
     for trial_id, color in zip(unique_trials, colors):
         # Mask to select data points for the current trial
         mask = trial_ids_test == trial_id
-        fig3=plt.plot(np.where(mask)[0], y_true[mask], color=color, label="Actual Values", linestyle="--")
-        fig3=plt.plot(np.where(mask)[0], y_pred[mask], color=color, label="Predicted Values")
-    fig3=plt.xlabel("Data Points")
-    fig3=plt.ylabel("Values")
-    fig3=plt.title("Actual and Predicted Values Line Plot")
+        plt.plot(np.where(mask)[0], y_true[mask], color=color, label="Actual Values", linestyle="--")
+        plt.plot(np.where(mask)[0], y_pred[mask], color=color, label="Predicted Values")
+    plt.xlabel("Data Points")
+    plt.ylabel("Values")
+    plt.title("Actual and Predicted Values Line Plot")
 
+    return fig1, fig2, fig3
+
+def plot_y_hist(y, y_train, y_test):
+    fig = go.Figure()
+    fig.add_trace(go.Histogram(x=y, name='y'))
+    fig.add_trace(go.Histogram(x=y_train, name='y_train'))
+    fig.add_trace(go.Histogram(x=y_test, name='y_test'))
+    # Overlay histograms
+    fig.update_layout(barmode='overlay')
+    # Reduce opacity to see both histograms
+    fig.update_traces(opacity=0.5)
+    return fig
+
+def plot_x_scaler(x, x_train, x_test, scaler):
+    fig1 = go.Figure()
+    for i in range(x.shape[1]):
+        fig1.add_trace(go.Scatter(y=x[:,i], name=f"x_{i}", mode='lines'))
+
+    fig2 = go.Figure()
+    fig2.add_trace(go.Scatter(y=x_train, name="Scaled x_train", mode='lines'))
+    fig2.add_trace(go.Scatter(y=scaler.inverse_transform(x_train), name="Unscaled x_train", mode='lines'))
+    fig2.update_layout(barmode='overlay')
+
+    fig3 = go.Figure()
+    fig3.add_trace(go.Scatter(y=x_test, name="Scaled x_test", mode='lines'))
+    fig3.add_trace(go.Scatter(y=scaler.inverse_transform(x_test), name="Unscaled x_test", mode='lines'))
+    fig3.update_layout(barmode='overlay')
+    # Reduce opacity to see both histograms
+    #fig.update_traces(opacity=0.5)
     return fig1, fig2, fig3

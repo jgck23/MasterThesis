@@ -14,9 +14,10 @@ from keras.layers import Dense, Dropout, Input, GRU
 from keras.optimizers.legacy import Adam
 from sklearn.metrics import root_mean_squared_error, r2_score
 import matplotlib.pyplot as plt
+from plotly.tools import mpl_to_plotly
 import os
 import wandb
-from fun import load_data, set_optimizer, set_regularizer, data_leakage, plot_y
+from fun import load_data, set_optimizer, set_regularizer, data_leakage, plot_y, plot_y_hist, plot_x_scaler
 from wandb.integration.keras import (
     WandbMetricsLogger,
     WandbModelCheckpoint,
@@ -31,8 +32,6 @@ def main():
     fileName='NN_Bachelor_Thesis/ba_trials_extra.csv'
     data = pd.read_csv(fileName, sep=',', header=None)
 
-    print(np.shape(data))
-
     height_preprocess = 0 # 1: upper trials only, -1: lower trials only, 0: all trials
     #data=data[data.iloc[:, -1] > 500] # watch out, this can lead to new all zero columns
 
@@ -40,9 +39,6 @@ def main():
     X = data.iloc[:, 1:-2].values  # All features, the last 5 columns are not features
     y = data.iloc[:, -1].values  # -5: wrist angle(x), -4: elbow angle(z), -3: shoulder flexion, -2: shoulder abduction, -1: Z-coordinate of right hand (height)
     trial_ids = data.iloc[:, 0].values  # 1st column, trial IDs
-
-    '''plt.hist(y, bins=100)
-    plt.show()'''
     
     var_thres=False
     if var_thres: # deletes features with low variance, eg. lot of zeros and only a few non-zero values in one column
@@ -70,16 +66,6 @@ def main():
     X_test = scaler_x.transform(X_test)
     #y_train = target_scaler.fit_transform(y_train.reshape(-1, 1))
     #y_test = target_scaler.transform(y_test.reshape(-1, 1))
-    
-    
-    plt.hist(y_train, bins=100)
-    plt.show()
-
-    plt.hist(y_test, bins=100)
-    plt.show()
-
-    plt.plot(X_test[:,1:-5])
-    plt.show()
 
     # Implement 5-fold cross-validation on the training+validation set
     gkf = GroupKFold(n_splits=3)
@@ -304,14 +290,20 @@ def main():
     print(f"Average Test R2 score: {avg_test_R2_score}")
     # best fold
     best_fold_loss = np.argmin(val_losses) + 1
-    print(f"Best Fold according to validation loss: {best_fold_loss}")
     best_fold_rmse = np.argmin(val_rmses) + 1
+    print(f"Best Fold according to validation loss: {best_fold_loss}")
     print(f"Best Fold according to validation RMSE: {best_fold_rmse}")
     
-    # Log the aggregate metrics under the group
+    # Log the aggregate metrics under the group all folds
     wandb.init(project="BA_NN", group=os.environ["WANDB_RUN_GROUP"], name="k_fold_summary")
     wandb.log({"avg_val_loss": avg_val_loss, "avg_test_loss": avg_test_loss, "avg_val_rmse": avg_val_rmse, "avg_test_rmse": avg_test_rmse, "avg_val_R2_score": avg_val_R2_score, "avg_test_R2_score": avg_test_R2_score, "best_fold_loss": best_fold_loss, "best_fold_rmse": best_fold_rmse})
     wandb.save("main.py")
+    histploty = plot_y_hist(y, y_train, y_test)
+    wandb.log({"Histograms of y/y_train/y_test": histploty})
+    plotx, plotxtrain, plotxtest = plot_x_scaler(X, X_train, X_test, scaler_x)
+    wandb.log({"Plot of X ": plotx})
+    wandb.log({"Plots of X_train": plotxtrain})
+    wandb.log({"Plots of X_test": plotxtest})
     wandb.finish()
 
 if __name__ == "__main__":
