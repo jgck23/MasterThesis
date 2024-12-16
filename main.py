@@ -300,10 +300,12 @@ def main():
     wandb.save("main.py")
     histploty = plot_y_hist(y, y_train, y_test)
     wandb.log({"Histograms of y/y_train/y_test": histploty})
-    plotx, plotxtrain, plotxtest = plot_x_scaler(X, X_train, X_test, scaler_x)
+    plotx, scaledxtrain, unscaledxtrain, scaledxtest, unscaledxtest = plot_x_scaler(X, X_train, X_test, scaler_x)
     wandb.log({"Plot of X ": plotx})
-    wandb.log({"Plots of X_train": plotxtrain})
-    wandb.log({"Plots of X_test": plotxtest})
+    wandb.log({"Plot of scaled X_train": scaledxtrain})
+    wandb.log({"Plot of unscaled X_train": unscaledxtrain})
+    wandb.log({"Plot of scaled X_test": scaledxtest})
+    wandb.log({"Plot of unscaled X_test": unscaledxtest})
     wandb.finish()
 
 if __name__ == "__main__":

@@ -6,22 +6,26 @@ import matplotlib.pyplot as plt
 import numpy as np
 import plotly.express as px
 import plotly.graph_objects as go
+import colorcet as cc
+
 
 def load_data(userinput=None):
     while True:
         try:
             if userinput is None:
-                userinput= input("Enter the name of the file you want to create a model for : ")
+                userinput = input(
+                    "Enter the name of the file you want to create a model for : "
+                )
             # Load the .mat file
-            mat_file = glob.glob('**/'+str(userinput)+'.mat', recursive=True)
+            mat_file = glob.glob("**/" + str(userinput) + ".mat", recursive=True)
             if len(mat_file) > 1:
                 raise ValueError("Multiple files found")
 
-            mat = scipy.io.loadmat(mat_file[0]) 
+            mat = scipy.io.loadmat(mat_file[0])
             # Print the keys of the dictionary
-            #print(mat.keys())
+            # print(mat.keys())
             # Assuming the data is stored in a variable named 'data' in the .mat file
-            data = mat['learnerMatrix']
+            data = mat["learnerMatrix"]
             # Convert the data to a pandas DataFrame
             df = pd.DataFrame(data)
             return df, userinput
@@ -32,12 +36,17 @@ def load_data(userinput=None):
             print("Invalid input")
             pass
 
+
 def set_optimizer(optimizer, learning_rate=0.001, beta_1=0.9, beta_2=0.999):
     optimizer = optimizer.lower().strip()
     if optimizer == "adam":
-        return tf.keras.optimizers.Adam(learning_rate=learning_rate, beta_1=beta_1, beta_2=beta_2)
+        return tf.keras.optimizers.Adam(
+            learning_rate=learning_rate, beta_1=beta_1, beta_2=beta_2
+        )
     elif optimizer == "sgd":
-        return tf.keras.optimizers.SGD(learning_rate=learning_rate, momentum=0.0, nesterov=False)
+        return tf.keras.optimizers.SGD(
+            learning_rate=learning_rate, momentum=0.0, nesterov=False
+        )
     elif optimizer == "rmsprop":
         return tf.keras.optimizers.RMSprop(learning_rate=learning_rate, rho=0.9)
     elif optimizer == "adagrad":
@@ -45,14 +54,21 @@ def set_optimizer(optimizer, learning_rate=0.001, beta_1=0.9, beta_2=0.999):
     elif optimizer == "adadelta":
         return tf.keras.optimizers.Adadelta(learning_rate=learning_rate, rho=0.95)
     elif optimizer == "adamax":
-        return tf.keras.optimizers.Adamax(learning_rate=learning_rate, beta_1=beta_1, beta_2=beta_2)
+        return tf.keras.optimizers.Adamax(
+            learning_rate=learning_rate, beta_1=beta_1, beta_2=beta_2
+        )
     elif optimizer == "nadam":
-        return tf.keras.optimizers.Nadam(learning_rate=learning_rate, beta_1=beta_1, beta_2=beta_2)
+        return tf.keras.optimizers.Nadam(
+            learning_rate=learning_rate, beta_1=beta_1, beta_2=beta_2
+        )
     elif optimizer == "adamw":
-        return tf.keras.optimizers.AdamW(learning_rate=learning_rate, beta_1=beta_1, beta_2=beta_2)
+        return tf.keras.optimizers.AdamW(
+            learning_rate=learning_rate, beta_1=beta_1, beta_2=beta_2
+        )
     else:
         raise ValueError("Invalid optimizer")
-    
+
+
 def set_regularizer(regularizer, l1=0.01, l2=0.01):
     regularizer = regularizer.lower().strip()
     if regularizer == "l1":
@@ -63,96 +79,186 @@ def set_regularizer(regularizer, l1=0.01, l2=0.01):
         return tf.keras.regularizers.L1L2(l1, l2)
     else:
         raise ValueError("Invalid regularizer")
-    
+
+
 def data_leakage(trial_ids, train_index, test_index):
     train_trials = set(trial_ids[train_index])
     test_trials = set(trial_ids[test_index])
     common_trials = train_trials.intersection(test_trials)
     if common_trials:
-        return ValueError(f"Trial leakage detected between train and test sets for trials: {common_trials}")
-    
+        return ValueError(
+            f"Trial leakage detected between train and test sets for trials: {common_trials}"
+        )
+
+
 def plot_y(y_true, y_pred, trial_ids_test):
     # Plot y_pred and y_test as a dot plot for the test set
     # Create a colormap for unique trial IDs
     unique_trials = np.unique(trial_ids_test)
-    colors = plt.cm.gist_ncar(np.linspace(0, 1, len(unique_trials)))  #color map
+    colors = cc.glasbey
 
-    fig1=plt.figure(figsize=(10, 6))
+    if len(unique_trials) > len(colors):
+        raise ValueError(
+            f"Number of unique trials {len(unique_trials)} exceeds the number of available colors {len(colors)}. Not all plots will be drawn. Adjust colormap accordingly."
+        )
+
+    fig1 = go.Figure()
     for trial_id, color in zip(unique_trials, colors):
         # Mask to select data points for the current trial
         mask = trial_ids_test == trial_id
-        plt.scatter(
-            y_true[mask], 
-            y_pred[mask], 
-            alpha=0.5, 
-            #label=f"Trial {trial_id}", 
-            color=color
+        fig1.add_trace(
+            go.Scatter(
+                x=y_true[mask].flatten(),
+                y=y_pred[mask].flatten(),
+                mode="markers",
+                marker=dict(color=color),
+                name=f"Trial {trial_id}",
+            )
         )
-    plt.plot(
-        [min(y_true), max(y_true)],
-        [min(y_true), max(y_true)],
-        color="red",
-        #label="Ideal Line",
+    fig1.add_trace(
+        go.Scatter(
+            x=[min(y_true), max(y_true)],
+            y=[min(y_true), max(y_true)],
+            mode="lines",
+            line=dict(color="red"),
+            name="Ideale Linie (Ideal Line)",
+        )
     )
-    plt.xlabel("Actual Values")
-    plt.ylabel("Predicted Values")
-    plt.title("Actual vs Predicted Values")
+    fig1.update_traces(opacity=0.75)
+    fig1.update_layout(
+        xaxis_title="Tatsächliche Werte (True Values)",
+        yaxis_title="Vorhergesagte Werte (Predicted Values)",
+        title="Plot der tatsächlichen und vorhergesagten Werte (Dot Plot of True and Predicted Values)",
+    )
 
-    #Plot a residual plot
-    fig2=plt.figure(figsize=(10, 6))
+    # Plot a residual plot
+    fig2 = go.Figure()
     for trial_id, color in zip(unique_trials, colors):
         # Mask to select data points for the current trial
         mask = trial_ids_test == trial_id
-        plt.scatter(
-            y_true[mask].flatten(), 
-            y_pred[mask].flatten()-y_true[mask].flatten(), 
-            alpha=0.5, 
-            #label=f"Trial {trial_id}", 
-            color=color
+        fig2.add_trace(
+            go.Scatter(
+                x=y_true[mask].flatten(),
+                y=y_pred[mask].flatten() - y_true[mask].flatten(),
+                mode="markers",
+                marker=dict(color=color),
+                name=f"Trial {trial_id}",
+            )
         )
-    plt.axhline(y=0, color="red", linestyle="--", linewidth=2)
-    plt.xlabel("True Values")
-    plt.ylabel("Residuals")
-    plt.title("Residual Plot")
+    fig2.add_trace(
+        go.Scatter(
+            x=[min(y_true), max(y_true)],
+            y=[0, 0],
+            mode="lines",
+            line=dict(color="red"),
+            name="Ideale Linie (Ideal Line)",
+        )
+    )
+    fig2.update_traces(opacity=0.75)
+    fig2.update_layout(
+        xaxis_title="Tatsächliche Werte (True Values)",
+        yaxis_title="Residuen (Residuals)",
+        title="Plot der Residuen (Residual Plot)",
+    )
 
-    #plot y_true and y_pred as a line plot
-    fig3=plt.figure(figsize=(10, 6))
+
+    # plot y_true and y_pred as a line plot
+    fig3 = go.Figure()
     for trial_id, color in zip(unique_trials, colors):
         # Mask to select data points for the current trial
         mask = trial_ids_test == trial_id
-        plt.plot(np.where(mask)[0], y_true[mask], color=color, label="Actual Values", linestyle="--")
-        plt.plot(np.where(mask)[0], y_pred[mask], color=color, label="Predicted Values")
-    plt.xlabel("Data Points")
-    plt.ylabel("Values")
-    plt.title("Actual and Predicted Values Line Plot")
+        fig3.add_trace(
+            go.Scatter(
+                x=np.arange(len(y_true))[mask],
+                y=y_true[mask].flatten(),
+                mode="lines",
+                line=dict(color=color, dash="solid", width=3),
+                name=f"Trial {trial_id} - Tatsächliche Werte (True Values)",
+            )
+        )
+        fig3.add_trace(
+            go.Scatter(
+                x=np.arange(len(y_pred))[mask],
+                y=y_pred[mask].flatten(),
+                mode="lines",
+                line=dict(color=color, dash="dash", width=1),
+                name=f"Trial {trial_id} - Vorhergesagte Werte (Predicted Values)",
+            )
+        )
+    fig3.update_layout(
+        xaxis_title="Datenpunkte (Data Points)",
+        yaxis_title="Werte (Values)",
+        title="Plot der tatsächlichen und vorhergesagten Werte (Line Plot of True and Predicted Values)",
+    )
 
     return fig1, fig2, fig3
 
+
 def plot_y_hist(y, y_train, y_test):
     fig = go.Figure()
-    fig.add_trace(go.Histogram(x=y, name='y'))
-    fig.add_trace(go.Histogram(x=y_train, name='y_train'))
-    fig.add_trace(go.Histogram(x=y_test, name='y_test'))
+    fig.add_trace(go.Histogram(x=y, name="y"))
+    fig.add_trace(go.Histogram(x=y_train, name="y_train"))
+    fig.add_trace(go.Histogram(x=y_test, name="y_test"))
+    fig.update_layout(
+        xaxis_title="Werte (Values)",
+        yaxis_title="Häufigkeit (Frequency)",
+        title="Histogramm der Zielvariablen (Histogram of the target variable)",
+    )
     # Overlay histograms
-    fig.update_layout(barmode='overlay')
+    fig.update_layout(barmode="overlay")
     # Reduce opacity to see both histograms
     fig.update_traces(opacity=0.5)
     return fig
 
+
 def plot_x_scaler(x, x_train, x_test, scaler):
     fig1 = go.Figure()
     for i in range(x.shape[1]):
-        fig1.add_trace(go.Scatter(y=x[:,i], name=f"x_{i}", mode='lines'))
+        fig1.add_trace(go.Scatter(y=x[:, i], name=f"x_{i}", mode="lines"))
+    fig1.update_layout(
+        xaxis_title="Datenpunkte (Data Points)",
+        yaxis_title="Sensorwerte (Sensor values)",
+        title="Plot der Daten (Plot of Data)",
+    )
 
     fig2 = go.Figure()
-    fig2.add_trace(go.Scatter(y=x_train, name="Scaled x_train", mode='lines'))
-    fig2.add_trace(go.Scatter(y=scaler.inverse_transform(x_train), name="Unscaled x_train", mode='lines'))
-    fig2.update_layout(barmode='overlay')
-
     fig3 = go.Figure()
-    fig3.add_trace(go.Scatter(y=x_test, name="Scaled x_test", mode='lines'))
-    fig3.add_trace(go.Scatter(y=scaler.inverse_transform(x_test), name="Unscaled x_test", mode='lines'))
-    fig3.update_layout(barmode='overlay')
-    # Reduce opacity to see both histograms
-    #fig.update_traces(opacity=0.5)
-    return fig1, fig2, fig3
+    for i in range(x_train.shape[1]):
+        fig2.add_trace(go.Scatter(y=x_train[:, i], mode="lines"))
+        fig3.add_trace(
+            go.Scatter(y=scaler.inverse_transform(x_train)[:, i], mode="lines")
+        )
+        fig2.update_layout(barmode="overlay")
+        fig3.update_layout(barmode="overlay")
+    fig2.update_layout(
+        xaxis_title="Datenpunkte (Data Points)",
+        yaxis_title="Sensorwerte (Sensor values)",
+        title="Plot der Trainingsdaten nach Skalierung (Plot of Training Data)",
+    )
+    fig3.update_layout(
+        xaxis_title="Datenpunkte (Data Points)",
+        yaxis_title="Sensorwerte (Sensor values)",
+        title="Plot der Trainingsdaten (Plot of Training Data after Scaling)",
+    )
+
+    fig4 = go.Figure()
+    fig5 = go.Figure()
+    for i in range(x_test.shape[1]):
+        fig4.add_trace(go.Scatter(y=x_test[:, i], mode="lines"))
+        fig5.add_trace(
+            go.Scatter(y=scaler.inverse_transform(x_test)[:, i], mode="lines")
+        )
+        fig4.update_layout(barmode="overlay")
+        fig5.update_layout(barmode="overlay")
+    fig4.update_layout(
+        xaxis_title="Datenpunkte (Data Points)",
+        yaxis_title="Sensorwerte (Sensor values)",
+        title="Plot der Testdaten nach Skalierung (Plot of Test Data)",
+    )
+    fig5.update_layout(
+        xaxis_title="Datenpunkte (Data Points)",
+        yaxis_title="Sensorwerte (Sensor values)",
+        title="Plot der Testdaten (Plot of Test Data after Scaling)",
+    )
+
+    return fig1, fig2, fig3, fig4, fig5

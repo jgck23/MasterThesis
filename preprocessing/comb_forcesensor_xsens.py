@@ -10,7 +10,7 @@ import numpy as np
 #recording at top and last recording at
 #bottom in both folders when sorted by 
 #name.
-#########################################
+########################################
 
 folder_path_Xsens = '/Users/jacob/Documents/Microsoft Visual Studio Code Projects/Masterarbeit/Data/Xsens Data/241212_Leopard24'
 folder_path_Tekscan = "/Users/jacob/Documents/Microsoft Visual Studio Code Projects/Masterarbeit/Data/Foot Sensor Force Data/241212_Leopard24"
