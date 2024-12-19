@@ -7,6 +7,7 @@ import numpy as np
 import plotly.express as px
 import plotly.graph_objects as go
 import colorcet as cc
+from sklearn.preprocessing import StandardScaler, MinMaxScaler, RobustScaler, QuantileTransformer
 
 
 def load_data(userinput=None):
@@ -79,6 +80,19 @@ def set_regularizer(regularizer, l1=0.01, l2=0.01):
         return tf.keras.regularizers.L1L2(l1, l2)
     else:
         raise ValueError("Invalid regularizer")
+    
+def set_standardizer(standardizer): #add more if you want
+    standardizer = standardizer.lower().strip()
+    if standardizer == "standardscaler":
+        return StandardScaler()
+    elif standardizer == "minmaxscaler":
+        return MinMaxScaler()
+    elif standardizer == "robustscaler":
+        return RobustScaler()
+    elif standardizer == "quantiletransformer":
+        return QuantileTransformer()
+    else:
+        raise ValueError("Invalid standardizer")
 
 
 def data_leakage(trial_ids, train_index, test_index):
@@ -215,6 +229,7 @@ def plot_x_scaler(x, x_train, x_test, scaler):
     fig1 = go.Figure()
     for i in range(x.shape[1]):
         fig1.add_trace(go.Scatter(y=x[:, i], name=f"x_{i}", mode="lines"))
+        fig1.update_layout(barmode="overlay")
     fig1.update_layout(
         xaxis_title="Datenpunkte (Data Points)",
         yaxis_title="Sensorwerte (Sensor values)",
@@ -233,12 +248,12 @@ def plot_x_scaler(x, x_train, x_test, scaler):
     fig2.update_layout(
         xaxis_title="Datenpunkte (Data Points)",
         yaxis_title="Sensorwerte (Sensor values)",
-        title="Plot der Trainingsdaten nach Skalierung (Plot of Training Data)",
+        title="Plot der Trainingsdaten nach Skalierung (Plot of Training Data after Scaling)",
     )
     fig3.update_layout(
         xaxis_title="Datenpunkte (Data Points)",
         yaxis_title="Sensorwerte (Sensor values)",
-        title="Plot der Trainingsdaten (Plot of Training Data after Scaling)",
+        title="Plot der Trainingsdaten (Plot of Training Data)",
     )
 
     fig4 = go.Figure()
@@ -253,12 +268,18 @@ def plot_x_scaler(x, x_train, x_test, scaler):
     fig4.update_layout(
         xaxis_title="Datenpunkte (Data Points)",
         yaxis_title="Sensorwerte (Sensor values)",
-        title="Plot der Testdaten nach Skalierung (Plot of Test Data)",
+        title="Plot der Testdaten nach Skalierung (Plot of Test Data after scaling)",
     )
     fig5.update_layout(
         xaxis_title="Datenpunkte (Data Points)",
         yaxis_title="Sensorwerte (Sensor values)",
-        title="Plot der Testdaten (Plot of Test Data after Scaling)",
+        title="Plot der Testdaten (Plot of Test Data)",
     )
 
     return fig1, fig2, fig3, fig4, fig5
+
+def addfeatures(data):
+    X=data.iloc[:,1:-11]
+    gyro=data.iloc[:,-6:]
+    X=X.join(gyro)
+    return X

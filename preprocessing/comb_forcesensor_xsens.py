@@ -12,9 +12,9 @@ import numpy as np
 #name.
 ########################################
 
-folder_path_Xsens = '/Users/jacob/Documents/Microsoft Visual Studio Code Projects/Masterarbeit/Data/Xsens Data/241212_Leopard24'
+folder_path_Xsens = '/Users/jacob/Documents/Microsoft Visual Studio Code Projects/Masterarbeit/Data/Xsens Data/241212_Leopard24_IMU'
 folder_path_Tekscan = "/Users/jacob/Documents/Microsoft Visual Studio Code Projects/Masterarbeit/Data/Foot Sensor Force Data/241212_Leopard24"
-output_name = '241212_Dataset_Leopard24.csv'
+output_name = '241212_Dataset_Leopard24_IMU.csv'
 
 #!!!!!!!Dont change anything below this line!!!!!!!
 
