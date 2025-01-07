@@ -283,3 +283,18 @@ def addfeatures(data):
     gyro=data.iloc[:,-6:]
     X=X.join(gyro)
     return X
+
+def addtrialidentifier(X, trial_ids):
+    # Convert trial IDs to integer indices
+    unique_trials = np.unique(trial_ids)
+    trial_to_index = {tid: i for i, tid in enumerate(unique_trials)}
+    trial_indices = np.array([trial_to_index[tid] for tid in trial_ids])
+
+    # Scale trial indices
+    scaler = StandardScaler()
+    trial_indices_scaled = scaler.fit_transform(trial_indices.reshape(-1, 1))
+
+    # Add scaled trial indices to the features
+    X_combined = np.hstack([trial_indices_scaled, X])
+
+    return X_combined

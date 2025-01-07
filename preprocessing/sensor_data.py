@@ -6,53 +6,60 @@ from scipy.signal import convolve
 import matplotlib.pyplot as plt
 from natsort import natsorted
 
-def main(folder_path):
-    folder_path = "/Users/jacob/Documents/Microsoft Visual Studio Code Projects/Masterarbeit/Data/Foot Sensor Force Data/241212_Leopard24"
-    # sensor data already has cut off for minimum values (S.Helmstetter)
-    file_names = [
-        f
-        for f in os.listdir(folder_path)
-        if os.path.isfile(os.path.join(folder_path, f)) and f.endswith(".csv")
-    ]
-    file_names = natsorted(file_names)
-    print(
-        f"These files will be vertically concatenated in the following order: {file_names}"
-    )
-    NN = []
-    N_frames = []
-    # iterate over all files in the folder and append the data to the list
-    for i in range(len(file_names)):
-        file_path = os.path.join(folder_path, file_names[i])
-        # load the data from the file
-        data = load_data(file_path)
-        # smooth the data per trial
-        data = smooth_data(data, f_cutoff=5, recording_frequency=60)
-        data = np.insert(data, 0, i + 1, axis=1)  # add trial count
-        
-        #Add mean of each row and count of activated sensels to the last columns
-        row_means = np.round(data.mean(axis=1, keepdims=True), 2)
-        activated_sensels = np.sum(data > 0, axis=1, keepdims=True)
-        data = np.hstack((data, row_means))
-        data = np.hstack((data, activated_sensels))
+def main(folder_paths):
+    NN_array = []
+    N_frames_array = []
+    trials = 0
+    for folder_path in folder_paths: 
+        # sensor data already has cut off for minimum values (S.Helmstetter)
+        file_names = [
+            f
+            for f in os.listdir(folder_path)
+            if os.path.isfile(os.path.join(folder_path, f)) and f.endswith(".csv")
+        ]
+        file_names = natsorted(file_names)
+        print(
+            f"These files will be vertically concatenated in the following order: {file_names}"
+        )
+        NN = []
+        N_frames = []
+        # iterate over all files in the folder and append the data to the list
+        for i in range(len(file_names)):
+            file_path = os.path.join(folder_path, file_names[i])
+            # load the data from the file
+            data = load_data(file_path)
+            # smooth the data per trial
+            data = smooth_data(data, f_cutoff=5, recording_frequency=60)
+            data = np.insert(data, 0, i + 1 +trials, axis=1)  # add trial count
+            
+            #Add mean of each row and count of activated sensels to the last columns
+            row_means = np.round(data.mean(axis=1, keepdims=True), 2)
+            activated_sensels = np.sum(data > 0, axis=1, keepdims=True)
+            data = np.hstack((data, row_means))
+            data = np.hstack((data, activated_sensels))
 
-        N_frames.append(data.shape[0])
-        NN.append(data)
+            N_frames.append(data.shape[0])
+            NN.append(data)
 
-    # save the data to a csv file
-    #df1 = pd.DataFrame(NNarray)
-    '''df.to_csv(
-        "Data/Foot Sensor Force Data/241212_Leopard24_FSensor.csv",
-        index=False,
-        header=False,
-    )'''
-    #df2 = pd.DataFrame(N_frames)
-    '''df.to_csv(
-        "Data/Foot Sensor Force Data/241212_Leopard24_N_frames_FSensor.csv",
-        index=False,
-        header=False,
-    )'''
+        trials += len(file_names)
 
-    return NN, N_frames
+        # save the data to a csv file
+        #df1 = pd.DataFrame(NNarray)
+        '''df.to_csv(
+            "Data/Foot Sensor Force Data/241212_Leopard24_FSensor.csv",
+            index=False,
+            header=False,
+        )'''
+        #df2 = pd.DataFrame(N_frames)
+        '''df.to_csv(
+            "Data/Foot Sensor Force Data/241212_Leopard24_N_frames_FSensor.csv",
+            index=False,
+            header=False,
+        )'''
+        NN_array.extend(NN)
+        N_frames_array.extend(N_frames)
+
+    return NN_array, N_frames_array
 
 
 def load_data(file_path):

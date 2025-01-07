@@ -9,12 +9,14 @@ import numpy as np
 #name is not required. This means first 
 #recording at top and last recording at
 #bottom in both folders when sorted by 
-#name.
+#name. If provided a list of folders,
+#the order of the folders must be the
+#same as the order of the recordings.
 ########################################
 
-folder_path_Xsens = '/Users/jacob/Documents/Microsoft Visual Studio Code Projects/Masterarbeit/Data/Xsens Data/241212_Leopard24_IMU'
-folder_path_Tekscan = "/Users/jacob/Documents/Microsoft Visual Studio Code Projects/Masterarbeit/Data/Foot Sensor Force Data/241212_Leopard24"
-output_name = '241212_Dataset_Leopard24_IMU.csv'
+folder_path_Xsens = ['/Users/jacob/Documents/Microsoft Visual Studio Code Projects/Masterarbeit/Data/Xsens Data/241113_Leopard24','/Users/jacob/Documents/Microsoft Visual Studio Code Projects/Masterarbeit/Data/Xsens Data/241121_Leopard24','/Users/jacob/Documents/Microsoft Visual Studio Code Projects/Masterarbeit/Data/Xsens Data/241212_Leopard24']
+folder_path_Tekscan = ['/Users/jacob/Documents/Microsoft Visual Studio Code Projects/Masterarbeit/Data/Foot Sensor Force Data/241113_Leopard24','/Users/jacob/Documents/Microsoft Visual Studio Code Projects/Masterarbeit/Data/Foot Sensor Force Data/241121_Leopard24','/Users/jacob/Documents/Microsoft Visual Studio Code Projects/Masterarbeit/Data/Foot Sensor Force Data/241212_Leopard24']
+output_name = '241113_241121_241212_combined.csv'
 
 #!!!!!!!Dont change anything below this line!!!!!!!
 

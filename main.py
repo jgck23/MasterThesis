@@ -16,7 +16,7 @@ from sklearn.metrics import root_mean_squared_error, r2_score, mean_absolute_err
 import matplotlib.pyplot as plt
 import os
 import wandb
-from fun import load_data, set_optimizer, set_regularizer, data_leakage, plot_y, plot_y_hist, plot_x_scaler, set_standardizer, addfeatures
+from fun import load_data, set_optimizer, set_regularizer, data_leakage, plot_y, plot_y_hist, plot_x_scaler, set_standardizer, addfeatures, addtrialidentifier
 from wandb.integration.keras import (
     WandbMetricsLogger,
     WandbModelCheckpoint,
@@ -31,8 +31,8 @@ def main():
     #fileName='NN_Bachelor_Thesis/ba_trials_extra.csv'
     data = pd.read_csv(fileName, sep=',', header=None)
 
-    height_preprocess = 0 # 1: upper trials only, -1: lower trials only, 0: all trials
-    #data=data[data.iloc[:, -1] > 500] # watch out, this can lead to new all zero columns
+    height_preprocess = 1 # 1: upper trials only, -1: lower trials only, 0: all trials
+    data=data[data.iloc[:, -1] > 500] # watch out, this can lead to new all zero columns
 
     # Split the data into features and target
     #X = addfeatures(data)
@@ -41,6 +41,8 @@ def main():
     target = 'elbow angle (flexion/extension)'
     #target = 'wrist angle (ulnar/radial deviation)'
     trial_ids = data.iloc[:, 0].values  # 1st column, trial IDs
+
+    X = addtrialidentifier(X, trial_ids)
     
     var_thres=True
     if var_thres: # deletes features with low variance, eg. lot of zeros and only a few non-zero values in one column
@@ -48,7 +50,7 @@ def main():
         X=sel.fit_transform(X)
 
     n_groups=trial_ids[-1] #get the last number of trial ids, which is the number of groups
-    n_test_groups=round(0.1*n_groups)
+    n_test_groups=round(0.15*n_groups)
     #print(n_test_groups)
 
     # Initialize GroupShuffleSplit and split the data
@@ -96,24 +98,24 @@ def main():
             config={
                 "Dataset": f'{fileName}',
                 "target": f'{target}',
-                "layer_1": 32,
+                "layer_1": 64,
                 "activation_1": "relu", # relu, sigmoid, tanh, softmax, softplus, softsign, selu, elu, exponential
                 "kernel_initializer_1": "HeNormal", # HeNormal, GlorotNormal, LecunNormal, HeUniform, GlorotUniform, LecunUniform
                 "dropout": 0.2,  # random.uniform(0.01, 0.80),
-                "layer_2": 32,
+                "layer_2": 64,
                 "kernel_initializer_2": "HeNormal", # HeNormal, GlorotNormal, LecunNormal, HeUniform, GlorotUniform, LecunUniform
                 "activation_2": "relu", # relu, sigmoid, tanh, softmax, softplus, softsign, selu, elu, exponential
-                "layer_3": 32,
+                "layer_3": 64,
                 "kernel_initializer_3": "HeNormal", # HeNormal, GlorotNormal, LecunNormal, HeUniform, GlorotUniform, LecunUniform
                 "activation_3": "relu", # relu, sigmoid, tanh, softmax, softplus, softsign, selu, elu, exponential
                 "optimizer": "adam", # adam, sgd, rmsprop, adagrad, adadelta, adamax, nadam, adamw
                 "learning_rate": 0.001,
                 "loss": "mean_squared_error", 
-                "epoch": 200,
-                "batch_size": 50, #20
+                "epoch": 1000,
+                "batch_size": 70, #20
                 "regularizer": "l2", # l1, l2, l1_l2
                 #"l1": 0.5, # lambda value for l1 regularization, lambda for l2 and l1_l2 can be set equally as well
-                "l2": 0.01,
+                "l2": 0.1,
                 "FYI": "The saved model is the best model according to the lowest validation loss during training.",
                 "VarianceThreshold": var_thres,
                 "height_preprocess": height_preprocess,
@@ -311,7 +313,7 @@ def main():
     print(f"Best Fold according to validation RMSE: {best_fold_rmse}")
     
     # Log the aggregate metrics under the group all folds
-    wandb.init(project="241212_Leopard24", group=os.environ["WANDB_RUN_GROUP"], name="k_fold_summary")
+    wandb.init(project="241212_Leopard24", group=os.environ["WANDB_RUN_GROUP"], name="k_fold_summary", settings=wandb.Settings(silent=True))
     wandb.log({"avg_val_loss": avg_val_loss, "avg_test_loss": avg_test_loss, "avg_val_rmse": avg_val_rmse, "avg_test_rmse": avg_test_rmse, "avg_val_R2_score": avg_val_R2_score, "avg_test_R2_score": avg_test_R2_score, "best_fold_loss": best_fold_loss, "best_fold_rmse": best_fold_rmse})
     wandb.save("main.py")
     histploty = plot_y_hist(y, y_train, y_test)

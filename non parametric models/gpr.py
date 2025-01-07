@@ -11,12 +11,12 @@ from sklearn.gaussian_process.kernels import ExpSineSquared
 # Load the data
 #data, name_mat = load_data()
 #fileName='Data/241113_Dataset_Leopard24.csv'
-fileName='NN_Bachelor_Thesis/ba_trials_extra.csv'
+fileName='Data/241212_Dataset_Leopard24.csv'
 data = pd.read_csv(fileName, sep=',', header=None)
 
 # Split the data into features and target
-X = data.iloc[:, 1:-2].values 
-y = data.iloc[:, -1].values  
+X = data.iloc[:, 1:-7].values 
+y = data.iloc[:, -4].values  
 trial_ids = data.iloc[:, 0].values 
 
 # Initialize GroupShuffleSplit
@@ -41,7 +41,7 @@ X_test = scaler_x.transform(X_test)
 kernel = ExpSineSquared(length_scale=1.0, periodicity=3.0)
 
 # Initialize GaussianProcessRegressor
-gpr = GaussianProcessRegressor(kernel=kernel, n_restarts_optimizer=3, alpha=1e-2)
+gpr = GaussianProcessRegressor(kernel=None, n_restarts_optimizer=3, alpha=1e-2)
 
 # Fit to the training data
 gpr.fit(X_train, y_train)
