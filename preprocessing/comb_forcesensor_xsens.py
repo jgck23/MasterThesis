@@ -14,14 +14,14 @@ import numpy as np
 #same as the order of the recordings.
 ########################################
 
-folder_path_Xsens = ['/Users/jacob/Documents/Microsoft Visual Studio Code Projects/Masterarbeit/Data/Xsens Data/241113_Leopard24','/Users/jacob/Documents/Microsoft Visual Studio Code Projects/Masterarbeit/Data/Xsens Data/241121_Leopard24','/Users/jacob/Documents/Microsoft Visual Studio Code Projects/Masterarbeit/Data/Xsens Data/241212_Leopard24']
-folder_path_Tekscan = ['/Users/jacob/Documents/Microsoft Visual Studio Code Projects/Masterarbeit/Data/Foot Sensor Force Data/241113_Leopard24','/Users/jacob/Documents/Microsoft Visual Studio Code Projects/Masterarbeit/Data/Foot Sensor Force Data/241121_Leopard24','/Users/jacob/Documents/Microsoft Visual Studio Code Projects/Masterarbeit/Data/Foot Sensor Force Data/241212_Leopard24']
-output_name = '241113_241121_241212_combined.csv'
+folder_path_Xsens = ['/Users/jacob/Documents/Microsoft Visual Studio Code Projects/Masterarbeit/Data/Xsens Data/241212_Leopard24_IMU']
+folder_path_Tekscan = ['/Users/jacob/Documents/Microsoft Visual Studio Code Projects/Masterarbeit/Data/Foot Sensor Force Data/241212_Leopard24']
+output_name = '241212_Dataset_Leopard24_IMU.csv'
 
 #!!!!!!!Dont change anything below this line!!!!!!!
 
 tek_data, tek_frames = sensor_data.main(folder_path_Tekscan)
-xs_data, xs_frames = xsens_data.main(folder_path_Xsens)
+xs_data, xs_frames, header = xsens_data.main(folder_path_Xsens)
 
 ml = []
 comb = []
@@ -49,6 +49,11 @@ zero_column = [i for i in range(ml_stack.shape[1]) if np.all(ml_stack[:, i] == 0
 # print(f"Zero columns: {zero_column}")
 ml_stack = np.delete(ml_stack, zero_column, axis=1)
 
+#add header to the data
+xsens_header_count=len(header)
+header_list = ['Trial_ID'] + [f'sensor{i+1}' for i in range(ml_stack.shape[1] -4 -xsens_header_count)] + ['avg_load', 'total_load', 'active_sensors']
+header_list = header_list + header
+
 #convert to pandas dataframe and save as csv
 df = pd.DataFrame(ml_stack)
-df.to_csv(output_name, index=False, header=False)
+df.to_csv(output_name, index=False, header=header_list)

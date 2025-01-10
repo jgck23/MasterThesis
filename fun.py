@@ -2,7 +2,6 @@ import scipy.io
 import glob
 import pandas as pd
 import tensorflow as tf
-import matplotlib.pyplot as plt
 import numpy as np
 import plotly.express as px
 import plotly.graph_objects as go

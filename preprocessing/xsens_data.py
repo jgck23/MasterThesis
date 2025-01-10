@@ -20,7 +20,7 @@ def main(folder_paths):
         # iterate over all files in the folder and append the data to the list, also cut the xsens data accordingly
         for i in range(len(file_names)):
             file_path = os.path.join(folder_path, file_names[i])
-            data = load_data(file_path)
+            header, data = load_data(file_path)
             #if data.shape[0] < N_frames[i]:
             #    raise ValueError(f'Number of Xsens frames from file: {file_names[i]} is smaller than the number of sensor frames. Manually remove the sensor data and the xsens data.')
             #data = data[:int(N_frames[i])] # cut the xsens data to match the sensor data
@@ -40,19 +40,15 @@ def main(folder_paths):
         #df2 = pd.DataFrame(N_frames)
         #df.to_csv('Data/Xsens Data/241212_Leopard24_Xsens.csv', index=False, header=False)
 
-    return NN_array, N_frames_array
+    return NN_array, N_frames_array, header
 
 def load_data(file_path):
     # read the data from the given csv file and store it in a list of arrays
-    '''df = pd.read_csv(file_path, header=None)
-    array = df.values  # convert the dataframe to a numpy array'''
-    trial = []
-    with open(file_path, 'r') as file:
-        for line in file:
-            trial.append(line.strip().split(','))
-        array = np.array(trial)
+    df = pd.read_csv(file_path)
+    header = list(df.columns) #extract the header
+    array = df.values  # convert the dataframe to a numpy array
               
-    return array         
+    return header, array         
 
 def smooth_data(data, f_cutoff=1, recording_frequency=60):
     sigma = recording_frequency / (2 * np.pi * f_cutoff)

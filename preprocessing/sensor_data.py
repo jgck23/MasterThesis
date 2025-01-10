@@ -34,8 +34,10 @@ def main(folder_paths):
             
             #Add mean of each row and count of activated sensels to the last columns
             row_means = np.round(data.mean(axis=1, keepdims=True), 2)
+            total_load= np.sum(data, axis=1, keepdims=True)
             activated_sensels = np.sum(data > 0, axis=1, keepdims=True)
             data = np.hstack((data, row_means))
+            data = np.hstack((data, total_load))
             data = np.hstack((data, activated_sensels))
 
             N_frames.append(data.shape[0])

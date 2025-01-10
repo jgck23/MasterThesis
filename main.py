@@ -8,6 +8,7 @@ from sklearn.model_selection import (
 from sklearn.preprocessing import StandardScaler, MinMaxScaler, RobustScaler, QuantileTransformer
 from sklearn.feature_selection import VarianceThreshold
 import tensorflow as tf
+import numpy as np
 # from keras.models import Sequential
 from keras.models import Sequential
 from keras.layers import Dense, Dropout, Input, GRU
@@ -42,16 +43,16 @@ def main():
     #target = 'wrist angle (ulnar/radial deviation)'
     trial_ids = data.iloc[:, 0].values  # 1st column, trial IDs
 
-    X = addtrialidentifier(X, trial_ids)
+    #X = addtrialidentifier(X, trial_ids)
     
     var_thres=True
     if var_thres: # deletes features with low variance, eg. lot of zeros and only a few non-zero values in one column
         sel = VarianceThreshold(threshold=(.8 * (1 - .8)))
         X=sel.fit_transform(X)
 
-    n_groups=trial_ids[-1] #get the last number of trial ids, which is the number of groups
-    n_test_groups=round(0.15*n_groups)
-    #print(n_test_groups)
+    n_groups = np.unique(trial_ids).size  # get the number of unique trial ids, which is the number of groups
+    n_test_groups=round(0.1*n_groups)
+    print(n_test_groups)
 
     # Initialize GroupShuffleSplit and split the data
     gss = GroupShuffleSplit(n_splits=1, test_size=n_test_groups, random_state = 42 )
