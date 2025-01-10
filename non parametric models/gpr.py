@@ -41,10 +41,10 @@ X_test = scaler_x.transform(X_test)
 kernel = ExpSineSquared(length_scale=1.0, periodicity=3.0)
 
 # Initialize GaussianProcessRegressor
-gpr = GaussianProcessRegressor(kernel=None, n_restarts_optimizer=3, alpha=1e-2)
+gpr = GaussianProcessRegressor(kernel=None, n_restarts_optimizer=3, alpha=1e-2, copy_X_train=False)
 
 # Fit to the training data
-gpr.fit(X_train, y_train)
+gpr.fit(X_train, y_train) 
 
 # Predict on the test data
 y_pred, sigma = gpr.predict(X_test, return_std=True)

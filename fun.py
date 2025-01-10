@@ -277,12 +277,6 @@ def plot_x_scaler(x, x_train, x_test, scaler):
 
     return fig1, fig2, fig3, fig4, fig5
 
-def addfeatures(data):
-    X=data.iloc[:,1:-11]
-    gyro=data.iloc[:,-6:]
-    X=X.join(gyro)
-    return X
-
 def addtrialidentifier(X, trial_ids):
     # Convert trial IDs to integer indices
     unique_trials = np.unique(trial_ids)
