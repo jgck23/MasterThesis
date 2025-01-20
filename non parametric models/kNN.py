@@ -11,16 +11,15 @@ from sklearn.model_selection import cross_validate
 #from fun import load_data
 
 # Load the data
-#data, name_mat = load_data()
-fileName='NN_Bachelor_Thesis/ba_trials.csv'
-#fileName='Data/241121_Dataset_Leopard24.csv'
-data= pd.read_csv(fileName , sep=',', header=None)
+#fileName='NN_Bachelor_Thesis/ba_trials.csv'
+fileName='Data/241212_Dataset_Leopard24_IMU.csv'
+data= pd.read_csv(fileName , sep=',')
 #data=data[data.iloc[:, -1] > 500]
 
 # Split the data into features and target
-X = data.iloc[:, 1:-1].values  # All features 
-y = data.iloc[:, -1].values  # 101th column, elbow flexion angle
-trial_ids = data.iloc[:, 0].values  # 1st column, trial IDs
+X = data.loc[:, "sensor1":"active_sensors"].values
+y = data.loc[:, "ElbowAngle"].values
+trial_ids = data.loc[:, "Trial_ID"].values
 
 # Initialize GroupShuffleSplit
 gss = GroupShuffleSplit(n_splits=1, test_size=0.2, random_state=21)
@@ -68,6 +67,8 @@ plt.show()
 # get index of smallest test rmse
 min_rmse_index = np.argmin(test_rmse)
 print("Optimal k: ", min_rmse_index+1)
+print("Optimal k Test RMSE: ", test_rmse[min_rmse_index+1])
+print("Optimal k Train RMSE: ", train_rmse[min_rmse_index+1])
 # create knn regessor with optimal k
 knn_regressor = KNeighborsRegressor(n_neighbors=min_rmse_index+1)
 knn_regressor.fit(X_train, y_train)
