@@ -1,5 +1,6 @@
 # Default ignored files
 *.keras
+*.pth
 et.csv
 Test_BA_Data_LSTM.py
 CNN.py

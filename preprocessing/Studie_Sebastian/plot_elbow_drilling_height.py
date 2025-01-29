@@ -11,7 +11,6 @@ data=data.values
 column=2
 name='Loewe29'
 
-
 drilling_height=data[:, 3]
 colors=cc.glasbey
 

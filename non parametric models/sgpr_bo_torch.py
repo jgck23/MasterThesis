@@ -16,9 +16,13 @@ class GPModel(gpytorch.models.ExactGP):
         self.mean_module = gpytorch.means.ConstantMean()
         self.base_covar_module = gpytorch.kernels.ScaleKernel(gpytorch.kernels.MaternKernel(nu=5/2))
 
-        inducing_points = train_x[::250,:].clone()
+        inducing_points = train_x[::500,:].clone()
         self.inducing_points = torch.nn.Parameter(inducing_points)
         self.covar_module = gpytorch.kernels.InducingPointKernel(self.base_covar_module, inducing_points=inducing_points, likelihood=likelihood)
+
+        #self.base_covar_module.base_kernel.lengthscale = torch.tensor(7.0)
+        #self.base_covar_module.outputscale = torch.tensor(1.0)
+        #self.likelihood.noise = torch.tensor(0.1)   
 
 
     def forward(self, x):
@@ -233,7 +237,7 @@ for train_index, val_index in gkf.split(X_train, y_train, groups=trial_ids_train
             else:
                 patience_counter += 1
             
-            print(f"Epoch {epoch} - Loss: {loss.item():.4f}, Val Loss: {val_loss:.4f}, Length Scale: {model.base_covar_module.base_kernel.lengthscale.item():.4f}, Noise: {likelihood.noise.item():.4f}")
+            print(f"Epoch {epoch} - Loss: {loss.item():.4f} Val Loss: {val_loss:.4f} Length Scale: {model.base_covar_module.base_kernel.lengthscale.item():.4f} Ouput Scale: {model.base_covar_module.outputscale.item():.4f} Noise: {likelihood.noise.item():.4f}")
             
             if patience_counter >= early_stopping_patience:
                 print(f"Early stopping triggered at epoch {epoch}.")

@@ -104,7 +104,20 @@ def data_leakage(trial_ids, train_index, test_index):
         )
 
 
-def plot_y(y_true, y_pred, trial_ids_test):
+def plot_y(y_true, y_pred, trial_ids_test, target):
+
+    if target == "WristAngle":
+        zielvariable = "Handgelenkwinkel"
+        target = "Wrist Angle"
+    elif target == "ElbowAngle":
+        zielvariable = "Ellenbogenwinkel"
+        target = "Elbow Angle"
+    elif target == "ShoulderAngleZ":
+        zielvariable = "Schulterwinkel Z (Flexion/Extension)"
+        target = "Shoulder Angle Z (Flexion/Extension)"
+    elif target == "ShoulderAngleX":
+        zielvariable = "Schulterwinkel X (Abduktion/Adduktion)"
+        target = "Shoulder Angle X (Abduction/Adduction)"
     # Plot y_pred and y_test as a dot plot for the test set
     # Create a colormap for unique trial IDs
     unique_trials = np.unique(trial_ids_test)
@@ -139,9 +152,9 @@ def plot_y(y_true, y_pred, trial_ids_test):
     )
     fig1.update_traces(opacity=0.75)
     fig1.update_layout(
-        xaxis_title="Tatsächliche Werte (True Values)",
-        yaxis_title="Vorhergesagte Werte (Predicted Values)",
-        title="Plot der tatsächlichen und vorhergesagten Werte (Dot Plot of True and Predicted Values)",
+        xaxis_title=f"Gemessene Werte {zielvariable} (Measured Values {target})",
+        yaxis_title=f"Vorhergesagte Werte {zielvariable} (Predicted Values {target})",
+        title=f"Plot der gemessenen und vorhergesagten Werte des {zielvariable} (Dot Plot of Measured and Predicted Values of the {target})",
     )
 
     # Plot a residual plot
@@ -169,7 +182,7 @@ def plot_y(y_true, y_pred, trial_ids_test):
     )
     fig2.update_traces(opacity=0.75)
     fig2.update_layout(
-        xaxis_title="Tatsächliche Werte (True Values)",
+        xaxis_title=f"Gemessene Werte {zielvariable} (Measured Values {target})",
         yaxis_title="Residuen (Residuals)",
         title="Plot der Residuen (Residual Plot)",
     )
@@ -186,7 +199,7 @@ def plot_y(y_true, y_pred, trial_ids_test):
                 y=y_true[mask].flatten(),
                 mode="lines",
                 line=dict(color=color, dash="solid", width=3),
-                name=f"Trial {trial_id} - Tatsächliche Werte (True Values)",
+                name=f"Trial {trial_id} - Gemessene Werte (True Values)",
             )
         )
         fig3.add_trace(
@@ -201,7 +214,7 @@ def plot_y(y_true, y_pred, trial_ids_test):
     fig3.update_layout(
         xaxis_title="Datenpunkte (Data Points)",
         yaxis_title="Werte (Values)",
-        title="Plot der tatsächlichen und vorhergesagten Werte (Line Plot of True and Predicted Values)",
+        title=f"Plot des gemessenen und vorhergesagten {zielvariable} (Line Plot of Measured and Predicted {target})",
     )
 
     return fig1, fig2, fig3
@@ -223,6 +236,58 @@ def plot_y_hist(y, y_train, y_test):
     fig.update_traces(opacity=0.5)
     return fig
 
+def plot_height_hist(height, height_train, height_test):
+    fig = go.Figure()
+    fig.add_trace(go.Histogram(x=height, name="height"))
+    fig.add_trace(go.Histogram(x=height_train, name="height_train"))
+    fig.add_trace(go.Histogram(x=height_test, name="height_test"))
+    fig.update_layout(
+        xaxis_title="Höhe (Height)",
+        yaxis_title="Häufigkeit (Frequency)",
+        title="Histogramm der Höhe (Histogram of the height)",
+    )
+    # Overlay histograms
+    fig.update_layout(barmode="overlay")
+    # Reduce opacity to see both histograms
+    fig.update_traces(opacity=0.5)
+    return fig
+
+def plot_angle_vs_height(y, height, trial_ids, target):
+    if target == "WristAngle":
+        zielvariable = "Handgelenkwinkel"
+        target = "Wrist Angle"
+    elif target == "ElbowAngle":
+        zielvariable = "Ellenbogenwinkel"
+        target = "Elbow Angle"
+    elif target == "ShoulderAngleZ":
+        zielvariable = "Schulterwinkel Z (Flexion/Extension)"
+        target = "Shoulder Angle Z (Flexion/Extension)"
+    elif target == "ShoulderAngleX":
+        zielvariable = "Schulterwinkel X (Abduktion/Adduktion)"
+        target = "Shoulder Angle X (Abduction/Adduction)"
+
+    fig = go.Figure()
+    unique_trials = np.unique(trial_ids)
+    colors = cc.glasbey
+
+    for trial_id, color in zip(unique_trials, colors):
+        mask = trial_ids == trial_id
+        fig.add_trace(
+            go.Scatter(
+                x=y[mask].flatten(),
+                y=height[mask].flatten(),
+                mode="markers",
+                marker=dict(color=color),
+                name=f"Trial {trial_id}",
+            )
+        )
+    fig.update_traces(opacity=0.75)
+    fig.update_layout(
+        xaxis_title=f"Gemessener {zielvariable} (Measured {target})",
+        yaxis_title="Bohrhöhe (Drilling Height)",
+        title=f"Plot der Höhe gegen den {zielvariable} (Plot of Height vs {target})",
+    )
+    return fig
 
 def plot_x_scaler(x, x_train, x_test, scaler):
     fig1 = go.Figure()

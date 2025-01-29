@@ -32,13 +32,13 @@ from fun import (
     plot_x_scaler,
     set_standardizer,
     addtrialidentifier,
+    plot_height_hist,
+    plot_angle_vs_height,
 )
 from wandb.integration.keras import (
-    WandbMetricsLogger,
-    WandbModelCheckpoint,
-    WandbCallback,
+    WandbMetricsLogger
 )
-import shap
+import random
 
 os.environ["WANDB_RUN_GROUP"] = "experiment-" + wandb.util.generate_id()
 
@@ -60,15 +60,22 @@ def main(
     decrease_duration,
     decrease_duration_size,
     project_name,
-    random_int
+    random_int,
+    npseed,
+    invert_selection,
 ):
     # fileName='NN_Bachelor_Thesis/ba_trials_extra.csv'
+    np.random.seed(npseed)
+    tf.random.set_seed(42)
+    random.seed(42)
     data = pd.read_csv(fileName, sep=",")
 
-    if height_filtering:
-        data = data[
-            height_upper > data.loc[:, "RightHandZ"] > height_lower
-        ]  # watch out, this can lead to new all zero columns
+    if height_filtering and invert_selection: # watch out, this can lead to new all zero columns
+        selection = (data.loc[:, "RightHandZ"] > height_lower) & (data.loc[:, "RightHandZ"] < height_upper)
+        data = data[~selection]
+    elif height_filtering and not invert_selection: # watch out, this can lead to new all zero columns
+        selection = (data.loc[:, "RightHandZ"] > height_lower) & (data.loc[:, "RightHandZ"] < height_upper)
+        data = data[selection]
 
     if decrease_trials:
         trial_ids = data.loc[:, "Trial_ID"].values
@@ -164,19 +171,24 @@ def main(
                 "create_trial_identifier": create_trial_identifier,
                 "add_prop_features": add_prop_features,
                 "random_state": random_int,
+                "np_seed": npseed,
+                "decrease_trials": decrease_trials,
+                "decrease_trials_size": decrease_trials_size,
+                "decrease_duration": decrease_duration,
+                "decrease_duration_size": decrease_duration_size,
                 "activation": "relu",  # relu, sigmoid, tanh, softmax, softplus, softsign, selu, elu, exponential
                 "kernel_initializer": "HeNormal",  # HeNormal, GlorotNormal, LecunNormal, HeUniform, GlorotUniform, LecunUniform
-                "dropout": 0.2,
-                "layer_1": 64,
+                "dropout": 0.15,
+                "layer_1": 32,
                 "layer_2": 64,
                 "layer_3": 64,
                 "optimizer": "adam",  # adam, sgd, rmsprop, adagrad, adadelta, adamax, nadam, adamw
                 "learning_rate": 0.001,
                 "loss": "mean_squared_error",
                 "epoch": 1000,
-                "batch_size": 70,  # 20
-                "regularizer_type": "l2",  # l1, l2, l1_l2
-                "l": 0.1, # lambda value for l1 regularization, lambda for l2 and l1_l2 can be set equally as well
+                "batch_size": 50,  # 20
+                "regularizer_type": "l1",  # l1, l2, l1_l2
+                "l": 0.001, # lambda value for l1 regularization, lambda for l2 and l1_l2 can be set equally as well
                 "FYI": "The saved model is the best model according to the lowest validation loss during training.",
                 "VarianceThreshold": var_thresholding,
                 "variance_threshold": var_threshold,
@@ -319,7 +331,7 @@ def main(
         wandb.log({"Test R2 score": round(test_r2, 2)})
         wandb.log({"Test MAE": round(test_mae, 2)})
 
-        plot1, plot2, plot3 = plot_y(y_test, y_test_pred, trial_ids_test)
+        plot1, plot2, plot3 = plot_y(y_test, y_test_pred, trial_ids_test, target)
         wandb.log({"Actual vs Predicted Values for test set": plot1})
         wandb.log({"Residual Plot": plot2})
         wandb.log({"Actual and Predicted Values line plot": plot3})
@@ -382,11 +394,11 @@ def main(
     print(f"Best Fold according to validation loss: {best_fold_loss}")
     print(f"Best Fold according to validation RMSE: {best_fold_rmse}")
 
-    # Log the aggregate metrics under the group all folds
+    # Logging the aggregate metrics under the same group as the cross-validation runs
     wandb.init(
-        project="241212_Leopard24",
+        project=project_name,
         group=os.environ["WANDB_RUN_GROUP"],
-        name="k_fold_summary",
+        name="crossval_summary",
         settings=wandb.Settings(silent=True),
     )
     wandb.log(
@@ -397,23 +409,33 @@ def main(
             "avg_test_rmse": avg_test_rmse,
             "avg_val_R2_score": avg_val_R2_score,
             "avg_test_R2_score": avg_test_R2_score,
+            "avg_val_mae": avg_val_mae,
+            "avg_test_mae": avg_test_mae,
             "best_fold_loss": best_fold_loss,
             "best_fold_rmse": best_fold_rmse,
         }
     )
-    wandb.save("main.py")
+    wandb.save("Neural_Network.py") #save the script
+
     histploty = plot_y_hist(y, y_train, y_test)
     wandb.log({"Histograms of y/y_train/y_test": histploty})
+
     plotx, scaledxtrain, unscaledxtrain, scaledxtest, unscaledxtest = plot_x_scaler(
         X, X_train, X_test, scaler_x
     )
-
     # add the plots (X, X_train scaled and X_train unscaled) only if necessary since they are big in size
     # wandb.log({"Plot of X ": plotx})
     # wandb.log({"Plot of scaled X_train": scaledxtrain})
     # wandb.log({"Plot of unscaled X_train": unscaledxtrain})
     wandb.log({"Plot of scaled X_test": scaledxtest})
     wandb.log({"Plot of unscaled X_test": unscaledxtest})
+
+    histplotheight = plot_height_hist(data.loc[:, "RightHandZ"].values, data.loc[:, "RightHandZ"].values[train_index], data.loc[:, "RightHandZ"].values[test_index])
+    wandb.log({"Histogram of Height": histplotheight})
+
+    anglevsheight = plot_angle_vs_height(y, data.loc[:, "RightHandZ"].values, trial_ids, target)
+    wandb.log({"Angle vs Height": anglevsheight})
+
     wandb.finish()
 
 
