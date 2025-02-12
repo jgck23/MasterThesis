@@ -179,14 +179,14 @@ def main(
                 "activation": "relu",  # relu, sigmoid, tanh, softmax, softplus, softsign, selu, elu, exponential
                 "kernel_initializer": "HeNormal",  # HeNormal, GlorotNormal, LecunNormal, HeUniform, GlorotUniform, LecunUniform
                 "dropout": 0.15,
-                "layer_1": 32,
-                "layer_2": 64,
-                "layer_3": 64,
+                "layer_1": 128,
+                "layer_2": 128,
+                "layer_3": 128,
                 "optimizer": "adam",  # adam, sgd, rmsprop, adagrad, adadelta, adamax, nadam, adamw
-                "learning_rate": 0.001,
+                "learning_rate": 0.0005,
                 "loss": "mean_squared_error",
                 "epoch": 1000,
-                "batch_size": 50,  # 20
+                "batch_size": 64,  # 20
                 "regularizer_type": "l1",  # l1, l2, l1_l2
                 "l": 0.001, # lambda value for l1 regularization, lambda for l2 and l1_l2 can be set equally as well
                 "FYI": "The saved model is the best model according to the lowest validation loss during training.",
@@ -237,6 +237,16 @@ def main(
             )
         )
         model.add(Dropout(config.dropout))  #'''
+        #'''
+        model.add(
+            Dense(
+                config.layer_3,
+                activation=config.activation,
+                kernel_initializer=config.kernel_initializer,
+                kernel_regularizer=set_regularizer(config.regularizer_type, config.l),
+            )
+        )
+        model.add(Dropout(config.dropout))  #'''
         model.add(
             Dense(1)
         )  # , activation = 'linear', kernel_initializer='GlorotUniform'))#, activation="relu"))
@@ -251,7 +261,7 @@ def main(
             monitor="val_loss",
             mode="min",
             verbose=1,
-            patience=20,
+            patience=25,
             restore_best_weights=True,
         )
         # ModelCheckpoint callback to save the best model
@@ -266,7 +276,7 @@ def main(
         lr_scheduler = tf.keras.callbacks.ReduceLROnPlateau(
             monitor="val_loss",  # Metric to monitor
             factor=0.5,  # Factor by which the learning rate will be reduced
-            patience=7,  # Number of epochs with no improvement before reducing the learning rate
+            patience=6,  # Number of epochs with no improvement before reducing the learning rate
             min_lr=1e-6,  # Minimum learning rate (prevents reducing it too much)
             verbose=1,  # Verbosity mode (1 = display updates)
         )

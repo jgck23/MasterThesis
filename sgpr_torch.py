@@ -34,7 +34,9 @@ class GPModel(gpytorch.models.ExactGP):
         self.base_covar_module = gpytorch.kernels.ScaleKernel(
             gpytorch.kernels.MaternKernel(nu=5/2)) #, outputscale_constraint=gpytorch.constraints.Interval(0.01, 1.0)
 
-        inducing_points = train_x[::150,:].clone()
+
+        #step=int(train_x.shape[0]/500) #indepent of the number of datapoints there will be 500 inducing points
+        inducing_points = train_x[::75,:].clone() #every stepth point is selected as inducing point
         self.inducing_points = torch.nn.Parameter(inducing_points)
         self.covar_module = gpytorch.kernels.InducingPointKernel(self.base_covar_module, inducing_points=inducing_points, likelihood=likelihood)
 
@@ -173,7 +175,7 @@ def main(fileName, height_filtering, height_lower, height_upper, invert_selectio
                 "decrease_trials_size": decrease_trials_size,
                 "decrease_duration": decrease_duration,
                 "decrease_duration_size": decrease_duration_size,
-                "learning_rate": 0.5,
+                "learning_rate": 0.25,
                 "epoch": 100,
                 "FYI": "The saved model is the best model according to the lowest validation loss during training.",
                 "VarianceThreshold": var_thresholding,
@@ -244,12 +246,12 @@ def main(fileName, height_filtering, height_lower, height_upper, invert_selectio
                     best_inducing_points = model.covar_module.inducing_points.clone()
 
                     #This block is for testing the model on the test set during training
-                    t = model(X_test)
+                    '''t = model(X_test)
                     tl = -mll(t, y_test).item()
                     tp = likelihood(model(X_test)).mean
                     tr = torch.sqrt(torch.mean((tp - y_test) ** 2)).item()
                     tr2 = r2_score(y_test.numpy(), tp.numpy())
-                    print(f"Epoch {epoch} - Test Loss: {tl:.4f}, Test RMSE: {tr:.4f}, Test R2: {tr2:.4f}")
+                    print(f"Epoch {epoch} - Test Loss: {tl:.4f}, Test RMSE: {tr:.4f}, Test R2: {tr2:.4f}")'''
                 else:
                     patience_counter += 1
                 
@@ -260,9 +262,6 @@ def main(fileName, height_filtering, height_lower, height_upper, invert_selectio
                     break
 
             model.covar_module._clear_cache()
-            
-
-        print(model.inducing_points.shape)
 
         # Load the best model for this fold
         '''model.load_state_dict(best_model_state, strict=True)
@@ -273,12 +272,13 @@ def main(fileName, height_filtering, height_lower, height_upper, invert_selectio
         model.base_covar_module._clear_cache()
 
         state_dict = torch.load('model_state.pth')
+        wandb.save('model_state.pth')
         
         likelihood = gpytorch.likelihoods.GaussianLikelihood()
         model = GPModel(X_train_val, y_train_val, likelihood)
 
-        model.load_state_dict(state_dict['model_state_dict'])
-        likelihood.load_state_dict(state_dict['likelihood_state_dict'])
+        model.load_state_dict(state_dict['model_state_dict'], strict=True)
+        likelihood.load_state_dict(state_dict['likelihood_state_dict'],strict=True)
         model.covar_module.inducing_points = torch.nn.Parameter(best_inducing_points)
 
         likelihood.train() # set to train to clear cache before eval
@@ -390,7 +390,7 @@ def main(fileName, height_filtering, height_lower, height_upper, invert_selectio
         }
     )
     #save the script
-    wandb.save("Neural_Network.py")
+    wandb.save("sgpr_torch.py")
     wandb.finish()
 
 if __name__ == "__main__":
