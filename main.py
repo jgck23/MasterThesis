@@ -11,8 +11,8 @@ project_name='241212_Leopard24_TrialNum' # checking for the influence of the num
 #project_name='241212_Leopard24_Optimisation'
 project_name_sgpr = project_name + '_SGPR'
 
-model_type='SGPR' 
-#model_type='NN'
+#model_type='SGPR' 
+model_type='NN'
 
 add_propsensor_features=False
 

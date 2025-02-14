@@ -99,7 +99,7 @@ def data_leakage(trial_ids, train_index, test_index):
     test_trials = set(trial_ids[test_index])
     common_trials = train_trials.intersection(test_trials)
     if common_trials:
-        return ValueError(
+        raise ValueError(
             f"Trial leakage detected between train and test sets for trials: {common_trials}"
         )
 
