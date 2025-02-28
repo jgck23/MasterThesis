@@ -283,9 +283,12 @@ def plot_angle_vs_height(y, height, trial_ids, target):
         )
     fig.update_traces(opacity=0.75)
     fig.update_layout(
-        xaxis_title=f"Gemessener {zielvariable} (Measured {target})",
-        yaxis_title="Bohrhöhe (Drilling Height)",
-        title=f"Plot der Höhe gegen den {zielvariable} (Plot of Height vs {target})",
+        xaxis_title=f"Measured {target} (Xsens)", #Gemessener {zielvariable} (Xsens)
+        yaxis_title="Drilling Height", #Bohrhöhe
+        title=f"Plot of Height vs {target}", #Plot der Höhe gegen den {zielvariable}
+        title_font=dict(size=30),
+        xaxis=dict(title_font=dict(size=30), tickfont=dict(size=30)),
+        yaxis=dict(title_font=dict(size=30), tickfont=dict(size=30)),
     )
     return fig
 

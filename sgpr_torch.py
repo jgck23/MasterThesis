@@ -5,7 +5,12 @@ from sklearn.model_selection import GroupShuffleSplit
 import plotly.graph_objects as go
 import numpy as np
 import colorcet as cc
-from sklearn.preprocessing import StandardScaler, MinMaxScaler, QuantileTransformer, RobustScaler
+from sklearn.preprocessing import (
+    StandardScaler,
+    MinMaxScaler,
+    QuantileTransformer,
+    RobustScaler,
+)
 from sklearn.metrics import r2_score, mean_absolute_error
 from sklearn.model_selection import GroupKFold
 from fun import plot_y, addtrialidentifier, data_leakage, set_standardizer
@@ -15,15 +20,16 @@ import wandb
 import os
 import copy
 
-#Inducing point logic, selecting every 500th point seems like a lot for 65300 total points. But when leaving the test set
-#and validation set out, respectively 20% and for 2 fold cross validation 50%, that leaves roughly 26.200 points for 
-#training. Selecting every 500th poinnt then results in 52 inducing points, which can be not enough.
+# Inducing point logic, selecting every 500th point seems like a lot for 65300 total points. But when leaving the test set
+# and validation set out, respectively 20% and for 2 fold cross validation 50%, that leaves roughly 26.200 points for
+# training. Selecting every 500th poinnt then results in 52 inducing points, which can be not enough.
 
-#https://github.com/cornellius-gp/gpytorch/issues/1787 saving of the hyperparameters is possible but not the posterior,
-#so the training data has to be instantiated with the hyperparams to make predictions, still doesnt work
-#https://github.com/cornellius-gp/gpytorch/issues/1308 all possible solutions have been tested but the val loss after reloading
-#the model with the lowest val loss while training is always higher or lower than the lowest val loss during training. Not
-#significant but still a problem.
+# https://github.com/cornellius-gp/gpytorch/issues/1787 saving of the hyperparameters is possible but not the posterior,
+# so the training data has to be instantiated with the hyperparams to make predictions, still doesnt work
+# https://github.com/cornellius-gp/gpytorch/issues/1308 all possible solutions have been tested but the val loss after reloading
+# the model with the lowest val loss while training is always higher or lower than the lowest val loss during training. Not
+# significant but still a problem.
+
 
 # Define the model
 class GPModel(gpytorch.models.ExactGP):
@@ -32,34 +38,71 @@ class GPModel(gpytorch.models.ExactGP):
         self.mean_module = gpytorch.means.ConstantMean()
 
         self.base_covar_module = gpytorch.kernels.ScaleKernel(
-            gpytorch.kernels.MaternKernel(nu=5/2)) #, outputscale_constraint=gpytorch.constraints.Interval(0.01, 1.0)
+            gpytorch.kernels.MaternKernel(nu=5 / 2)
+        )  # , outputscale_constraint=gpytorch.constraints.Interval(0.01, 1.0)
 
-
-        #step=int(train_x.shape[0]/500) #indepent of the number of datapoints there will be 500 inducing points
-        inducing_points = train_x[::75,:].clone() #every stepth point is selected as inducing point
+        # step=int(train_x.shape[0]/500) #indepent of the number of datapoints there will be 500 inducing points
+        inducing_points = train_x[
+            ::75, :
+        ].clone()  # every stepth point is selected as inducing point
         self.inducing_points = torch.nn.Parameter(inducing_points)
-        self.covar_module = gpytorch.kernels.InducingPointKernel(self.base_covar_module, inducing_points=inducing_points, likelihood=likelihood)
+        self.covar_module = gpytorch.kernels.InducingPointKernel(
+            self.base_covar_module,
+            inducing_points=inducing_points,
+            likelihood=likelihood,
+        )
 
-        #self.base_covar_module.base_kernel.lengthscale = lengthscale_prior.mean
-        #self.base_covar_module.outputscale = outputscale_prior.mean
-        #self.likelihood.noise = torch.tensor(0.1)
+        # self.base_covar_module.base_kernel.lengthscale = lengthscale_prior.mean
+        # self.base_covar_module.outputscale = outputscale_prior.mean
+        # self.likelihood.noise = torch.tensor(0.1)
 
     def forward(self, x):
         mean_x = self.mean_module(x)
         covar_x = self.covar_module(x)
         return gpytorch.distributions.MultivariateNormal(mean_x, covar_x)
-    
+
+
 os.environ["WANDB_RUN_GROUP"] = "experiment-" + wandb.util.generate_id()
 
-def main(fileName, height_filtering, height_lower, height_upper, invert_selection, decrease_trials, decrease_trials_size, decrease_duration, decrease_duration_size, project_name, add_prop_features, target, create_trial_identifier, var_thresholding, var_threshold, testdata_size, random_int, scalewith, n_cross_val, npseed):
-    np.random.seed(npseed)
-    data = pd.read_csv(fileName, sep=',')
 
-    if height_filtering and invert_selection: # watch out, this can lead to new all zero columns
-        selection = (data.loc[:, "RightHandZ"] > height_lower) & (data.loc[:, "RightHandZ"] < height_upper)
+def main(
+    fileName,
+    height_filtering,
+    height_lower,
+    height_upper,
+    invert_selection,
+    decrease_trials,
+    decrease_trials_size,
+    decrease_duration,
+    decrease_duration_size,
+    project_name,
+    add_prop_features,
+    target,
+    create_trial_identifier,
+    var_thresholding,
+    var_threshold,
+    testdata_size,
+    random_int,
+    scalewith,
+    n_cross_val,
+    npseed,
+):
+    np.random.seed(npseed)
+    data = pd.read_csv(fileName, sep=",")
+
+    if (
+        height_filtering and invert_selection
+    ):  # watch out, this can lead to new all zero columns
+        selection = (data.loc[:, "RightHandZ"] > height_lower) & (
+            data.loc[:, "RightHandZ"] < height_upper
+        )
         data = data[~selection]
-    elif height_filtering and not invert_selection: # watch out, this can lead to new all zero columns
-        selection = (data.loc[:, "RightHandZ"] > height_lower) & (data.loc[:, "RightHandZ"] < height_upper)
+    elif (
+        height_filtering and not invert_selection
+    ):  # watch out, this can lead to new all zero columns
+        selection = (data.loc[:, "RightHandZ"] > height_lower) & (
+            data.loc[:, "RightHandZ"] < height_upper
+        )
         data = data[selection]
 
     if decrease_trials:
@@ -67,7 +110,9 @@ def main(fileName, height_filtering, height_lower, height_upper, invert_selectio
         unique_trials = np.unique(trial_ids)
         n_trials = unique_trials.size
         n_trials = round(decrease_trials_size * n_trials)
-        random_trials = np.random.choice(unique_trials, n_trials, replace=False) # set random seed !!!!!
+        random_trials = np.random.choice(
+            unique_trials, n_trials, replace=False
+        )  # set random seed !!!!!
         data = data[data["Trial_ID"].isin(random_trials)]
 
     if decrease_duration:
@@ -80,7 +125,7 @@ def main(fileName, height_filtering, height_lower, height_upper, invert_selectio
             mask.extend(trial_indices[: int(decrease_duration_size * trial_length)])
         data = data.loc[mask]
 
-    total_datapoints=data.shape[0]
+    total_datapoints = data.shape[0]
     print(f"Total number of datapoints: {total_datapoints}")
 
     # Split the data into features and target
@@ -106,7 +151,9 @@ def main(fileName, height_filtering, height_lower, height_upper, invert_selectio
     n_test_groups = round(testdata_size * n_groups)
 
     # Initialize GroupShuffleSplit
-    gss = GroupShuffleSplit(n_splits=1, test_size=n_test_groups, random_state=random_int)
+    gss = GroupShuffleSplit(
+        n_splits=1, test_size=n_test_groups, random_state=random_int
+    )
 
     # Split the data
     for train_index, test_index in gss.split(X, y, groups=trial_ids):
@@ -125,13 +172,15 @@ def main(fileName, height_filtering, height_lower, height_upper, invert_selectio
     X_train = scaler_x.fit_transform(X_train)
     X_test = scaler_x.transform(X_test)
 
-    X_test = torch.tensor(X_test, dtype=torch.float64) #train and val tensors are handeled below
+    X_test = torch.tensor(
+        X_test, dtype=torch.float64
+    )  # train and val tensors are handeled below
     y_test = torch.tensor(y_test, dtype=torch.float64)
 
     # Early Stopping Configuration
     early_stopping_patience = 12
     miniumum_delta = 1e-2
-    best_val_loss = float('inf')
+    best_val_loss = float("inf")
     patience_counter = 0
 
     gkf = GroupKFold(n_splits=n_cross_val)
@@ -175,7 +224,7 @@ def main(fileName, height_filtering, height_lower, height_upper, invert_selectio
                 "decrease_trials_size": decrease_trials_size,
                 "decrease_duration": decrease_duration,
                 "decrease_duration_size": decrease_duration_size,
-                "learning_rate": 0.25,
+                "learning_rate": 0.1,
                 "epoch": 100,
                 "FYI": "The saved model is the best model according to the lowest validation loss during training.",
                 "VarianceThreshold": var_thresholding,
@@ -203,14 +252,14 @@ def main(fileName, height_filtering, height_lower, height_upper, invert_selectio
 
         model.train()
         likelihood.train()
-        
+
         # Optimizer and MLL
         optimizer = torch.optim.Adam(model.parameters(), lr=config.learning_rate)
-        scheduler = ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=5)
+        scheduler = ReduceLROnPlateau(optimizer, mode="min", factor=0.5, patience=5)
         mll = gpytorch.mlls.ExactMarginalLogLikelihood(likelihood, model)
 
         # Early Stopping Initialization
-        best_val_loss = float('inf')
+        best_val_loss = float("inf")
         patience_counter = 0
 
         for epoch in range(1, config.epoch):  # Max iterations set to 1000
@@ -221,7 +270,7 @@ def main(fileName, height_filtering, height_lower, height_upper, invert_selectio
             loss = -mll(output, y_train_val)
             loss.backward()
             optimizer.step()
-            
+
             # Evaluate on validation set
             model.eval()
             likelihood.eval()
@@ -230,7 +279,7 @@ def main(fileName, height_filtering, height_lower, height_upper, invert_selectio
                 val_loss = -mll(val_output, y_val).item()  # Validation loss
 
                 scheduler.step(val_loss)
-                
+
                 # Early Stopping Logic
                 if val_loss < best_val_loss:
                     if best_val_loss - val_loss < miniumum_delta:
@@ -238,25 +287,30 @@ def main(fileName, height_filtering, height_lower, height_upper, invert_selectio
                     else:
                         patience_counter = 0
                     best_val_loss = val_loss
-                    #torch.save(model.state_dict(), 'model_state.pth')
-                    torch.save({
-                            'model_state_dict': model.state_dict(),
-                            'likelihood_state_dict': likelihood.state_dict()
-                        }, 'model_state.pth')
+                    # torch.save(model.state_dict(), 'model_state.pth')
+                    torch.save(
+                        {
+                            "model_state_dict": model.state_dict(),
+                            "likelihood_state_dict": likelihood.state_dict(),
+                        },
+                        "model_state.pth",
+                    )
                     best_inducing_points = model.covar_module.inducing_points.clone()
 
-                    #This block is for testing the model on the test set during training
-                    '''t = model(X_test)
+                    # This block is for testing the model on the test set during training
+                    """t = model(X_test)
                     tl = -mll(t, y_test).item()
                     tp = likelihood(model(X_test)).mean
                     tr = torch.sqrt(torch.mean((tp - y_test) ** 2)).item()
                     tr2 = r2_score(y_test.numpy(), tp.numpy())
-                    print(f"Epoch {epoch} - Test Loss: {tl:.4f}, Test RMSE: {tr:.4f}, Test R2: {tr2:.4f}")'''
+                    print(f"Epoch {epoch} - Test Loss: {tl:.4f}, Test RMSE: {tr:.4f}, Test R2: {tr2:.4f}")"""
                 else:
                     patience_counter += 1
-                
-                print(f"Epoch {epoch} - Loss: {loss.item():.4f} Val Loss: {val_loss:.4f} Length Scale: {model.base_covar_module.base_kernel.lengthscale.item():.4f} Ouput Scale: {model.base_covar_module.outputscale.item():.4f} Noise: {likelihood.noise.item():.4f} LR: {scheduler.get_last_lr()[0]}")
-                
+
+                print(
+                    f"Epoch {epoch} - Loss: {loss.item():.4f} Val Loss: {val_loss:.4f} Length Scale: {model.base_covar_module.base_kernel.lengthscale.item():.4f} Ouput Scale: {model.base_covar_module.outputscale.item():.4f} Noise: {likelihood.noise.item():.4f} LR: {scheduler.get_last_lr()[0]}"
+                )
+
                 if patience_counter >= early_stopping_patience:
                     print(f"Early stopping triggered at epoch {epoch}.")
                     break
@@ -264,24 +318,24 @@ def main(fileName, height_filtering, height_lower, height_upper, invert_selectio
             model.covar_module._clear_cache()
 
         # Load the best model for this fold
-        '''model.load_state_dict(best_model_state, strict=True)
+        """model.load_state_dict(best_model_state, strict=True)
         likelihood.load_state_dict(best_likelihood_state, strict=True)
-        model.covar_module.inducing_points = torch.nn.Parameter(best_inducing_points)'''
+        model.covar_module.inducing_points = torch.nn.Parameter(best_inducing_points)"""
         # Reload the model and likelihood
         model.covar_module.base_kernel._clear_cache()
         model.base_covar_module._clear_cache()
 
-        state_dict = torch.load('model_state.pth')
-        wandb.save('model_state.pth')
-        
+        state_dict = torch.load("model_state.pth")
+        wandb.save("model_state.pth")
+
         likelihood = gpytorch.likelihoods.GaussianLikelihood()
         model = GPModel(X_train_val, y_train_val, likelihood)
 
-        model.load_state_dict(state_dict['model_state_dict'], strict=True)
-        likelihood.load_state_dict(state_dict['likelihood_state_dict'],strict=True)
+        model.load_state_dict(state_dict["model_state_dict"], strict=True)
+        likelihood.load_state_dict(state_dict["likelihood_state_dict"], strict=True)
         model.covar_module.inducing_points = torch.nn.Parameter(best_inducing_points)
 
-        likelihood.train() # set to train to clear cache before eval
+        likelihood.train()  # set to train to clear cache before eval
         model.train()
 
         model.eval()
@@ -290,7 +344,9 @@ def main(fileName, height_filtering, height_lower, height_upper, invert_selectio
         print(f"Lengthscale: {model.base_covar_module.base_kernel.lengthscale.item()}")
         print(f"Outputscale: {model.base_covar_module.outputscale.item()}")
         print(f"Noise: {model.likelihood.noise.item()}")
-        wandb.log({"Lengthscale": model.base_covar_module.base_kernel.lengthscale.item()})
+        wandb.log(
+            {"Lengthscale": model.base_covar_module.base_kernel.lengthscale.item()}
+        )
         wandb.log({"Outputscale": model.base_covar_module.outputscale.item()})
         wandb.log({"Noise": model.likelihood.noise.item()})
 
@@ -306,7 +362,7 @@ def main(fileName, height_filtering, height_lower, height_upper, invert_selectio
 
             val_pred = likelihood(model(X_val)).mean
             test_pred = likelihood(model(X_test)).mean
-            
+
             val_rmse = torch.sqrt(torch.mean((val_pred - y_val) ** 2)).item()
             val_r2 = r2_score(y_val.numpy(), val_pred.numpy())
             test_rmse = torch.sqrt(torch.mean((test_pred - y_test) ** 2)).item()
@@ -336,10 +392,14 @@ def main(fileName, height_filtering, height_lower, height_upper, invert_selectio
             Signal_to_Noise = signal_variance / noise
             print("Signal to Noise Ratio: ", Signal_to_Noise.item())
             wandb.log({"Signal to Noise Ratio": Signal_to_Noise.item()})
-            
-            print(f"Fold {fold} - Val RMSE: {val_rmse:.4f}, Val R2: {val_r2:.4f}, Val Loss: {vloss:.4f}")
-            print(f"Fold {fold} - Test RMSE: {test_rmse:.4f}, Test R2: {test_r2:.4f}, Test Loss: {tloss:.4f}")
-        
+
+            print(
+                f"Fold {fold} - Val RMSE: {val_rmse:.4f}, Val R2: {val_r2:.4f}, Val Loss: {vloss:.4f}"
+            )
+            print(
+                f"Fold {fold} - Test RMSE: {test_rmse:.4f}, Test R2: {test_r2:.4f}, Test Loss: {tloss:.4f}"
+            )
+
         fold += 1
         wandb.finish()
 
@@ -353,7 +413,7 @@ def main(fileName, height_filtering, height_lower, height_upper, invert_selectio
     avg_val_mae = np.mean(val_maes)
     avg_test_mae = np.mean(test_maes)
 
-    #The average metrics in table format
+    # The average metrics in table format
     print(f"{'Metric':<25} {'Validation':<15} {'Test':<15}")
     print(f"{'-'*55}")
     print(f"{'Average Loss':<25} {avg_val_loss:<15.4f} {avg_test_loss:<15.4f}")
@@ -368,7 +428,7 @@ def main(fileName, height_filtering, height_lower, height_upper, invert_selectio
     print(f"Best Fold according to validation loss: {best_fold_loss}")
     print(f"Best Fold according to validation RMSE: {best_fold_rmse}")
 
-    #Logging the aggregate metrics under the same group as the cross-validation runs
+    # Logging the aggregate metrics under the same group as the cross-validation runs
     wandb.init(
         project=project_name,
         group=os.environ["WANDB_RUN_GROUP"],
@@ -389,12 +449,10 @@ def main(fileName, height_filtering, height_lower, height_upper, invert_selectio
             "best_fold_rmse": best_fold_rmse,
         }
     )
-    #save the script
+    # save the script
     wandb.save("sgpr_torch.py")
     wandb.finish()
 
+
 if __name__ == "__main__":
     main()
-
-
-

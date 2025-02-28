@@ -179,9 +179,9 @@ def main(
                 "activation": "relu",  # relu, sigmoid, tanh, softmax, softplus, softsign, selu, elu, exponential
                 "kernel_initializer": "HeNormal",  # HeNormal, GlorotNormal, LecunNormal, HeUniform, GlorotUniform, LecunUniform
                 "dropout": 0.15,
-                "layer_1": 128,
-                "layer_2": 128,
-                "layer_3": 128,
+                "layer_1": 64,
+                "layer_2": 64,
+                "layer_3": 64,
                 "optimizer": "adam",  # adam, sgd, rmsprop, adagrad, adadelta, adamax, nadam, adamw
                 "learning_rate": 0.0005,
                 "loss": "mean_squared_error",
@@ -237,7 +237,7 @@ def main(
             )
         )
         model.add(Dropout(config.dropout))  #'''
-        #'''
+        '''
         model.add(
             Dense(
                 config.layer_3,
