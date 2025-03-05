@@ -179,9 +179,9 @@ def main(
                 "activation": "relu",  # relu, sigmoid, tanh, softmax, softplus, softsign, selu, elu, exponential
                 "kernel_initializer": "HeNormal",  # HeNormal, GlorotNormal, LecunNormal, HeUniform, GlorotUniform, LecunUniform
                 "dropout": 0.15,
-                "layer_1": 64,
-                "layer_2": 64,
-                "layer_3": 64,
+                "layer_1": 128,
+                "layer_2": 128,
+                "layer_3": 128,
                 "optimizer": "adam",  # adam, sgd, rmsprop, adagrad, adadelta, adamax, nadam, adamw
                 "learning_rate": 0.0005,
                 "loss": "mean_squared_error",
@@ -237,7 +237,7 @@ def main(
             )
         )
         model.add(Dropout(config.dropout))  #'''
-        '''
+        #'''
         model.add(
             Dense(
                 config.layer_3,
@@ -246,7 +246,16 @@ def main(
                 kernel_regularizer=set_regularizer(config.regularizer_type, config.l),
             )
         )
-        model.add(Dropout(config.dropout))  #'''
+        model.add(Dropout(config.dropout))
+        model.add(
+            Dense(
+                config.layer_3,
+                activation=config.activation,
+                kernel_initializer=config.kernel_initializer,
+                kernel_regularizer=set_regularizer(config.regularizer_type, config.l),
+            )
+        )
+        model.add(Dropout(config.dropout))
         model.add(
             Dense(1)
         )  # , activation = 'linear', kernel_initializer='GlorotUniform'))#, activation="relu"))

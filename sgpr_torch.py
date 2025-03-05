@@ -224,7 +224,7 @@ def main(
                 "decrease_trials_size": decrease_trials_size,
                 "decrease_duration": decrease_duration,
                 "decrease_duration_size": decrease_duration_size,
-                "learning_rate": 0.1,
+                "learning_rate": 0.2,
                 "epoch": 100,
                 "FYI": "The saved model is the best model according to the lowest validation loss during training.",
                 "VarianceThreshold": var_thresholding,

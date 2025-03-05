@@ -147,14 +147,17 @@ def plot_y(y_true, y_pred, trial_ids_test, target):
             y=[min(y_true), max(y_true)],
             mode="lines",
             line=dict(color="red"),
-            name="Ideale Linie (Ideal Line)",
+            name="Ideal Line",
         )
     )
     fig1.update_traces(opacity=0.75)
     fig1.update_layout(
-        xaxis_title=f"Gemessene Werte {zielvariable} (Measured Values {target})",
-        yaxis_title=f"Vorhergesagte Werte {zielvariable} (Predicted Values {target})",
-        title=f"Plot der gemessenen und vorhergesagten Werte des {zielvariable} (Dot Plot of Measured and Predicted Values of the {target})",
+        xaxis_title=f"Xsens {target} [°]", #Gemessene Werte {zielvariable}
+        yaxis_title=f"Predicted {target} [°]", #Vorhergesagte Werte {zielvariable} 
+        title=f"Dot Plot of Measured and Predicted Values of the {target}", #Plot der gemessenen und vorhergesagten Werte des {zielvariable} 
+        title_font=dict(size=30),
+        xaxis=dict(title_font=dict(size=30), tickfont=dict(size=30)),
+        yaxis=dict(title_font=dict(size=30), tickfont=dict(size=30)),
     )
 
     # Plot a residual plot
@@ -177,14 +180,17 @@ def plot_y(y_true, y_pred, trial_ids_test, target):
             y=[0, 0],
             mode="lines",
             line=dict(color="red"),
-            name="Ideale Linie (Ideal Line)",
+            name="Ideal Line",
         )
     )
     fig2.update_traces(opacity=0.75)
     fig2.update_layout(
-        xaxis_title=f"Gemessene Werte {zielvariable} (Measured Values {target})",
-        yaxis_title="Residuen (Residuals)",
-        title="Plot der Residuen (Residual Plot)",
+        xaxis_title=f"Xsens {target} [°]", #Gemessene Werte {zielvariable}
+        yaxis_title="Residuals [°]",
+        title="Residual Plot",
+        title_font=dict(size=30),
+        xaxis=dict(title_font=dict(size=30), tickfont=dict(size=30)),
+        yaxis=dict(title_font=dict(size=30), tickfont=dict(size=30)),
     )
 
 
@@ -199,7 +205,7 @@ def plot_y(y_true, y_pred, trial_ids_test, target):
                 y=y_true[mask].flatten(),
                 mode="lines",
                 line=dict(color=color, dash="solid", width=3),
-                name=f"Trial {trial_id} - Gemessene Werte (True Values)",
+                name=f"Trial {trial_id} - Xsens Values",
             )
         )
         fig3.add_trace(
@@ -208,13 +214,16 @@ def plot_y(y_true, y_pred, trial_ids_test, target):
                 y=y_pred[mask].flatten(),
                 mode="lines",
                 line=dict(color=color, dash="dash", width=1),
-                name=f"Trial {trial_id} - Vorhergesagte Werte (Predicted Values)",
+                name=f"Trial {trial_id} - Predicted Values",
             )
         )
     fig3.update_layout(
-        xaxis_title="Datenpunkte (Data Points)",
-        yaxis_title="Werte (Values)",
-        title=f"Plot des gemessenen und vorhergesagten {zielvariable} (Line Plot of Measured and Predicted {target})",
+        xaxis_title="Data Points",
+        yaxis_title=f"Xsens and Predicted {target}",
+        title=f"Line Plot of Xsens and Predicted {target}", #Plot des gemessenen und vorhergesagten {zielvariable}
+        title_font=dict(size=30),
+        xaxis=dict(title_font=dict(size=30), tickfont=dict(size=30)),
+        yaxis=dict(title_font=dict(size=30), tickfont=dict(size=30)),
     )
 
     return fig1, fig2, fig3
@@ -242,9 +251,12 @@ def plot_height_hist(height, height_train, height_test):
     fig.add_trace(go.Histogram(x=height_train, name="height_train"))
     fig.add_trace(go.Histogram(x=height_test, name="height_test"))
     fig.update_layout(
-        xaxis_title="Höhe (Height)",
-        yaxis_title="Häufigkeit (Frequency)",
-        title="Histogramm der Höhe (Histogram of the height)",
+        xaxis_title="Height",
+        yaxis_title="Frequency",
+        title="Histogram of the height",
+        title_font=dict(size=30),
+        xaxis=dict(title_font=dict(size=30), tickfont=dict(size=30)),
+        yaxis=dict(title_font=dict(size=30), tickfont=dict(size=30)),
     )
     # Overlay histograms
     fig.update_layout(barmode="overlay")
@@ -283,7 +295,7 @@ def plot_angle_vs_height(y, height, trial_ids, target):
         )
     fig.update_traces(opacity=0.75)
     fig.update_layout(
-        xaxis_title=f"Measured {target} (Xsens)", #Gemessener {zielvariable} (Xsens)
+        xaxis_title=f"Xsens {target}", #Gemessener {zielvariable} (Xsens)
         yaxis_title="Drilling Height", #Bohrhöhe
         title=f"Plot of Height vs {target}", #Plot der Höhe gegen den {zielvariable}
         title_font=dict(size=30),

@@ -77,36 +77,45 @@ def plot_ntrials_depth(dataNN, dataSGPR, metric, vtb, nnsgprboth, mode, polydegr
     
     elif nnsgprboth == 'both':
         if vtb == 'validation' or vtb == 'test':
-            mask = dataNN[error_column].notna()
-            x_values = dataNN.loc[mask, error_column].values*100
-            y_values = dataNN.loc[mask, f'{vtb} {metric}'].values
-            fig.add_trace(go.Scatter(y=y_values, x=x_values-0.5, mode='markers', name=f'NN {vtb.capitalize()} {metric.upper()}', marker=dict(size=8, color='red')))
-            mask2 = dataSGPR[error_column].notna()
-            y_values = dataSGPR.loc[mask2, f'{vtb} {metric}'].values
-            fig.add_trace(go.Scatter(y=y_values, x=x_values+0.5, mode='markers', name=f'SGPR {vtb.capitalize()} {metric.upper()}', marker=dict(size=8, color='blue')))
+            masknn = dataNN[error_column].notna()
+            masksgpr = dataSGPR[error_column].notna()
+            x_values_nn = dataNN.loc[masknn, error_column].values*100
+            y_values = dataNN.loc[masknn, f'{vtb} {metric}'].values
+            fig.add_trace(go.Scatter(y=y_values, x=x_values_nn-0.5, mode='markers', name=f'NN {vtb.capitalize()} {metric.upper()}', marker=dict(size=8, color='red')))
+
+            x_values_sgpr = dataSGPR.loc[masksgpr, error_column].values*100
+            y_values = dataSGPR.loc[masksgpr, f'{vtb} {metric}'].values
+            fig.add_trace(go.Scatter(y=y_values, x=x_values_sgpr+0.5, mode='markers', name=f'SGPR {vtb.capitalize()} {metric.upper()}', marker=dict(size=8, color='blue')))
             fig.update_layout(title=f'NN and SGPR {vtb.capitalize()} {metric} plot', yaxis_title=f'{vtb.capitalize()} {metric.upper()}', xaxis_title=f'{mode.capitalize()} [%]')
+            
             degree = polydegree
-            A=np.vander(x_values, degree +1)
-            coeffs, _, _, _ = np.linalg.lstsq(A, dataNN.loc[mask, f'{vtb} {metric}'].values, rcond=None)
-            x = np.linspace(min(x_values), max(x_values), 100)
+            A=np.vander(x_values_nn, degree +1)
+            coeffs, _, _, _ = np.linalg.lstsq(A, dataNN.loc[masknn, f'{vtb} {metric}'].values, rcond=None)
+            x = np.linspace(min(x_values_nn), max(x_values_nn), 100)
             y = np.polyval(coeffs, x)
             fig.add_trace(go.Scatter(x=x, y=y, mode='lines', name=f'x^{degree} Fit for NN {vtb.capitalize()}', line=dict(color='red')))
-            coeffs, _, _, _ = np.linalg.lstsq(A, dataSGPR.loc[mask, f'{vtb} {metric}'].values, rcond=None)
+            
+            A=np.vander(x_values_sgpr, degree +1)
+            coeffs, _, _, _ = np.linalg.lstsq(A, dataSGPR.loc[masksgpr, f'{vtb} {metric}'].values, rcond=None)
+            x = np.linspace(min(x_values_sgpr), max(x_values_sgpr), 100)
             y = np.polyval(coeffs, x)
             fig.add_trace(go.Scatter(x=x, y=y, mode='lines', name=f'x^{degree} Fit for SGPR {vtb.capitalize()}', line=dict(color='blue')))
         elif vtb == 'both':
-            mask = dataNN[error_column].notna()
-            x_values = dataNN.loc[mask, error_column].values*100
-            y_values = dataNN.loc[mask, f'validation {metric}'].values
-            fig.add_trace(go.Scatter(y=y_values, x=x_values-0.01, mode='markers', name=f'NN Validation {metric.upper()}', marker=dict(size=8, color='red')))
-            y_values = dataNN.loc[mask, f'test {metric}'].values
-            fig.add_trace(go.Scatter(y=y_values, x=x_values-0.005, mode='markers', name=f'NN Test {metric.upper()}', marker=dict(size=8, color='orange'))
+            masknn = dataNN[error_column].notna()
+            masksgpr = dataSGPR[error_column].notna()
+            x_values_nn = dataNN.loc[masknn, error_column].values*100
+            x_values_sgpr = dataSGPR.loc[masksgpr, error_column].values*100
+            y_values_nn = dataNN.loc[masknn, f'validation {metric}'].values
+
+            fig.add_trace(go.Scatter(y=y_values_nn, x=x_values_nn-0.01, mode='markers', name=f'NN Validation {metric.upper()}', marker=dict(size=8, color='red')))
+            y_values_nn = dataNN.loc[mask, f'test {metric}'].values
+            fig.add_trace(go.Scatter(y=y_values_nn, x=x_values_nn-0.005, mode='markers', name=f'NN Test {metric.upper()}', marker=dict(size=8, color='orange'))
             )
-            y_values = dataSGPR.loc[mask, f'validation {metric}'].values
-            fig.add_trace(go.Scatter(y=y_values, x=x_values+0.005, mode='markers', name=f'SGPR Validation {metric.upper()}', marker=dict(size=8, color='blue'))
+            y_values_sgpr = dataSGPR.loc[masksgpr, f'validation {metric}'].values
+            fig.add_trace(go.Scatter(y=y_values_sgpr, x=x_values_sgpr+0.005, mode='markers', name=f'SGPR Validation {metric.upper()}', marker=dict(size=8, color='blue'))
             )
-            y_values = dataSGPR.loc[mask, f'test {metric}'].values
-            fig.add_trace(go.Scatter(y=y_values, x=x_values+0.01, mode='markers', name=f'SGPR Test {metric.upper()}', marker=dict(size=8, color='lightblue'))
+            y_values_sgpr = dataSGPR.loc[masksgpr, f'test {metric}'].values
+            fig.add_trace(go.Scatter(y=y_values_sgpr, x=x_values_sgpr+0.01, mode='markers', name=f'SGPR Test {metric.upper()}', marker=dict(size=8, color='lightblue'))
             )
             fig.update_layout(title=f'Validation and Test {metric.capitalize()} for NN and SGPR', yaxis_title=f'{metric.upper()}', xaxis_title=f'{mode.capitalize()} [%]')
             '''degree = polydegree
