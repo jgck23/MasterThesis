@@ -16,6 +16,9 @@ project_name_sgpr = project_name + '_SGPR'
 model_type='SGPR' 
 #model_type='NN'
 
+hidden_layer_num=5 # only for NN, change the number of hidden layers
+hidden_layer_size=128 #only for NN, change the number of neurons in the hidden layers
+
 add_propsensor_features=False
 
 height_filtering=False 
@@ -53,7 +56,7 @@ for random_state in random_states:
                         if model_type == 'NN':
                                 nn.main(path, height_filtering, height_lower, height_upper, create_trial_identifier, variance_thresholding, variance_threshold,
                                 testdata_size, target, scaler_X, add_propsensor_features, n_scross_val, decrease_trials, decrease_trials_size,
-                                decrease_duration, decrease_duration_size, project_name, random_state, seed, invert_selection)
+                                decrease_duration, decrease_duration_size, project_name, random_state, seed, invert_selection, hidden_layer_num, hidden_layer_size)
                         elif model_type == 'SGPR':
                                 sgpr.main(path, height_filtering, height_lower, height_upper, invert_selection, decrease_trials, decrease_trials_size,
                                 decrease_duration, decrease_duration_size, project_name_sgpr, add_propsensor_features, target, create_trial_identifier, 
@@ -66,7 +69,7 @@ for random_state in random_states:
                         if model_type == 'NN':
                                 nn.main(path, height_filtering, height_lower, height_upper, create_trial_identifier, variance_thresholding, variance_threshold,
                                 testdata_size, target, scaler_X, add_propsensor_features, n_scross_val, decrease_trials, decrease_trials_size,
-                                decrease_duration, decrease_duration_size, project_name, random_state, seed, invert_selection)
+                                decrease_duration, decrease_duration_size, project_name, random_state, seed, invert_selection, hidden_layer_num, hidden_layer_size)
                         elif model_type == 'SGPR':
                                 sgpr.main(path, height_filtering, height_lower, height_upper, invert_selection, decrease_trials, decrease_trials_size,
                                 decrease_duration, decrease_duration_size, project_name_sgpr, add_propsensor_features, target, create_trial_identifier, 
@@ -79,7 +82,7 @@ for random_state in random_states:
                 if model_type == 'NN':
                         nn.main(path, height_filtering, height_lower, height_upper, create_trial_identifier, variance_thresholding, variance_threshold,
                         testdata_size, target, scaler_X, add_propsensor_features, n_scross_val, decrease_trials, decrease_trials_size,
-                        decrease_duration, decrease_duration_size, project_name, random_state, seed, invert_selection)
+                        decrease_duration, decrease_duration_size, project_name, random_state, seed, invert_selection, hidden_layer_num, hidden_layer_size)
                 elif model_type == 'SGPR':
                         sgpr.main(path, height_filtering, height_lower, height_upper, invert_selection, decrease_trials, decrease_trials_size,
                         decrease_duration, decrease_duration_size, project_name_sgpr, add_propsensor_features, target, create_trial_identifier, 

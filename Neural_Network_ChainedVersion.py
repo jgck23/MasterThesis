@@ -43,17 +43,12 @@ import random
 os.environ["WANDB_RUN_GROUP"] = "experiment-" + wandb.util.generate_id()
 
 def main(
-    fileName,
-    height_filtering,
-    height_lower,
-    height_upper,
-    create_trial_identifier,
-    var_thresholding,
-    var_threshold,
-    testdata_size,
-    target,
-    scalewith,
-    add_prop_features,
+    X_train,
+    y_train,
+    trial_ids_train,
+    X_test,
+    y_test,
+    trial_ids_test,
     n_cross_val,
     decrease_trials,
     decrease_trials_size,
@@ -62,83 +57,26 @@ def main(
     project_name,
     random_int,
     npseed,
-    invert_selection,
+    testdata_size,
+    fileName,
+    scalewith,
+    n_groups,
+    total_datapoints,
+    create_trial_identifier,
+    add_prop_features,
+    var_thresholding,
+    var_threshold,
+    height_filtering,
+    height_lower,
+    height_upper,
     hidden_layers_num,
     hidden_layers_size,
+    target,
     chaining=False,
 ):
-    # fileName='NN_Bachelor_Thesis/ba_trials_extra.csv'
     np.random.seed(npseed)
     tf.random.set_seed(42)
     random.seed(42)
-    data = pd.read_csv(fileName, sep=",")
-
-    if height_filtering and invert_selection: # watch out, this can lead to new all zero columns
-        selection = (data.loc[:, "RightHandZ"] > height_lower) & (data.loc[:, "RightHandZ"] < height_upper)
-        data = data[~selection]
-    elif height_filtering and not invert_selection: # watch out, this can lead to new all zero columns
-        selection = (data.loc[:, "RightHandZ"] > height_lower) & (data.loc[:, "RightHandZ"] < height_upper)
-        data = data[selection]
-
-    if decrease_trials:
-        trial_ids = data.loc[:, "Trial_ID"].values
-        unique_trials = np.unique(trial_ids)
-        n_trials = unique_trials.size
-        n_trials = round(decrease_trials_size * n_trials)
-        random_trials = np.random.choice(unique_trials, n_trials, replace=False) # set random seed !!!!!
-        data = data[data["Trial_ID"].isin(random_trials)]
-
-    if decrease_duration:
-        trial_ids = data.loc[:, "Trial_ID"].values
-        unique_trials = np.unique(trial_ids)
-        mask = []
-        for trial in unique_trials:
-            trial_indices = data[data["Trial_ID"] == trial].index
-            trial_length = len(trial_indices)
-            mask.extend(trial_indices[: int(decrease_duration_size * trial_length)])
-        data = data.loc[mask]
-
-    total_datapoints=data.shape[0]
-    print(f"Total number of datapoints: {total_datapoints}")
-
-    # Split the data into features and target
-    X = data.loc[:, "sensor1":"active_sensors"].values
-    if add_prop_features:
-        X = pd.concat(
-            [X, data.loc[:, "GunAX":"GunJZ"].values], axis=1
-        )  # adds the xsens prop features to X data
-    y = data.loc[:, target].values
-
-    trial_ids = data.loc[:, "Trial_ID"].values
-
-    if create_trial_identifier:
-        X = addtrialidentifier(X, trial_ids)
-
-    if var_thresholding:  # deletes features with low variance
-        sel = VarianceThreshold(threshold=var_threshold)
-        X = sel.fit_transform(X)
-
-    n_groups = np.unique(
-        trial_ids
-    ).size  # get the number of unique trial ids, which is the number of groups
-    n_test_groups = round(testdata_size * n_groups)
-
-    # Initialize GroupShuffleSplit and split the data
-    gss = GroupShuffleSplit(n_splits=1, test_size=n_test_groups, random_state=random_int)
-    for train_index, test_index in gss.split(X, y, groups=trial_ids):
-        X_train, X_test = X[train_index], X[test_index]
-        y_train, y_test = y[train_index], y[test_index]
-        trial_ids_train, trial_ids_test = trial_ids[train_index], trial_ids[test_index]
-
-    # Check for trial leakage in train/test split
-    data_leakage(trial_ids, train_index, test_index)
-
-    # Standardize the data
-    scaler_x = set_standardizer(
-        scalewith
-    )  # minmax when the features are on the same scale, standard scaler when they are not
-    X_train = scaler_x.fit_transform(X_train)
-    X_test = scaler_x.transform(X_test)
 
     # Implement 5-fold cross-validation on the training+validation set
     gkf = GroupKFold(n_splits=n_cross_val)
@@ -213,10 +151,10 @@ def main(
         model = Sequential()
         model.add(Input(shape=(X_train_val.shape[1],)))
 
-        for i in range(config.num_hidden_layers):
+        for i in range(config.hidden_layers_num):
             model.add(
                 Dense(
-                    config.hidden_layer_size,
+                    config.hidden_layers_size,
                     activation=config.activation,
                     kernel_initializer=config.kernel_initializer,
                     kernel_regularizer=set_regularizer(config.regularizer_type, config.l),
@@ -404,26 +342,6 @@ def main(
         }
     )
     wandb.save("Neural_Network.py") #save the script
-
-    histploty = plot_y_hist(y, y_train, y_test)
-    wandb.log({"Histograms of y/y_train/y_test": histploty})
-
-    plotx, scaledxtrain, unscaledxtrain, scaledxtest, unscaledxtest = plot_x_scaler(
-        X, X_train, X_test, scaler_x
-    )
-    # add the plots (X, X_train scaled and X_train unscaled) only if necessary since they are big in size
-    # wandb.log({"Plot of X ": plotx})
-    # wandb.log({"Plot of scaled X_train": scaledxtrain})
-    # wandb.log({"Plot of unscaled X_train": unscaledxtrain})
-    wandb.log({"Plot of scaled X_test": scaledxtest})
-    wandb.log({"Plot of unscaled X_test": unscaledxtest})
-
-    histplotheight = plot_height_hist(data.loc[:, "RightHandZ"].values, data.loc[:, "RightHandZ"].values[train_index], data.loc[:, "RightHandZ"].values[test_index])
-    wandb.log({"Histogram of Height": histplotheight})
-
-    anglevsheight = plot_angle_vs_height(y, data.loc[:, "RightHandZ"].values, trial_ids, target)
-    wandb.log({"Angle vs Height": anglevsheight})
-
     wandb.finish()
 
     if chaining:

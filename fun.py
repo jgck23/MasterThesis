@@ -371,3 +371,22 @@ def addtrialidentifier(X, trial_ids):
     X_combined = np.hstack([trial_indices_scaled, X])
 
     return X_combined
+
+def whitenoise(X, noise_std):
+    features = X[:, :-3] #sensels
+    calculated_features = X[:, -3:] #sensor mean, total load, activated sensels
+
+    # Generate white noise with 0 mean and standard deviation noise_std
+    noise = np.random.normal(loc=0, scale=noise_std, size=features.shape)
+    features_noisy = features + noise
+
+    #recalculate the row means and total load
+    row_means = np.round(features_noisy.mean(axis=1, keepdims=True), 2)
+    total_load= np.sum(features_noisy, axis=1, keepdims=True)
+
+    features_noisy = np.hstack((features_noisy, row_means))
+    features_noisy = np.hstack((features_noisy, total_load))
+    # add the actived sensels back to the noisy data
+    noisy_data = np.hstack((features_noisy, calculated_features[:, 2]))
+
+    return noisy_data
