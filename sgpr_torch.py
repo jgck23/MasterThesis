@@ -13,7 +13,7 @@ from sklearn.preprocessing import (
 )
 from sklearn.metrics import r2_score, mean_absolute_error
 from sklearn.model_selection import GroupKFold
-from fun import plot_y, addtrialidentifier, data_leakage, set_standardizer
+from fun import *
 from sklearn.feature_selection import VarianceThreshold
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 import wandb
@@ -86,6 +86,9 @@ def main(
     scalewith,
     n_cross_val,
     npseed,
+    dB,
+    add_white_noise,
+    learning_rate,
 ):
     np.random.seed(npseed)
     data = pd.read_csv(fileName, sep=",")
@@ -165,6 +168,11 @@ def main(
     # Check for trial leakage in train/test split
     data_leakage(trial_ids, train_index, test_index)
 
+    # add white noise to the data
+    if add_white_noise:
+        X_train = whitenoise(X_train, dB)
+        X_test = whitenoise(X_test, dB)
+
     # Standardize the data
     scaler_x = set_standardizer(
         scalewith
@@ -224,7 +232,9 @@ def main(
                 "decrease_trials_size": decrease_trials_size,
                 "decrease_duration": decrease_duration,
                 "decrease_duration_size": decrease_duration_size,
-                "learning_rate": 0.2,
+                "learning_rate": learning_rate,
+                "add_white_noise": add_white_noise,
+                "SNR": dB,
                 "epoch": 100,
                 "FYI": "The saved model is the best model according to the lowest validation loss during training.",
                 "VarianceThreshold": var_thresholding,

@@ -56,6 +56,7 @@ datasgpr = pd.read_csv(filenamesgpr, sep=',')
 datasgpr.columns = datasgpr.columns.str.lower().str.replace(r'[\s_]', ' ', regex=True).str.replace(r'\bval\b', 'validation', regex=True)
 #flags:
 metric = 'rmse' # RMSE, MAE, R2 score, loss
-vtb = 'test' # validation, test, both 
+vtb = 'both' # validation, test, both 
 plotfilepath = 'Data/Post_Processing_Data/plots'
-plot_comparison_nnspgr(datann, datasgpr, metric, vtb, plotfilepath)
+target = ['WristAngle'] # WristAngle, ElbowAngle, ShoulderAngleZ, multiple targets possible
+plot_comparison_nnspgr(datann, datasgpr, metric, vtb, plotfilepath, target) #comment out if not needed

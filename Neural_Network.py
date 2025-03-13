@@ -22,19 +22,7 @@ from sklearn.metrics import root_mean_squared_error, r2_score, mean_absolute_err
 import matplotlib.pyplot as plt
 import os
 import wandb
-from fun import (
-    load_data,
-    set_optimizer,
-    set_regularizer,
-    data_leakage,
-    plot_y,
-    plot_y_hist,
-    plot_x_scaler,
-    set_standardizer,
-    addtrialidentifier,
-    plot_height_hist,
-    plot_angle_vs_height,
-)
+from fun import *
 from wandb.integration.keras import (
     WandbMetricsLogger
 )
@@ -65,7 +53,9 @@ def main(
     invert_selection,
     hidden_layers_num,
     hidden_layers_size,
-    chaining=False,
+    dB,
+    add_white_noise,
+    chaining=False, # if not given is set to False
 ):
     # fileName='NN_Bachelor_Thesis/ba_trials_extra.csv'
     np.random.seed(npseed)
@@ -133,6 +123,11 @@ def main(
     # Check for trial leakage in train/test split
     data_leakage(trial_ids, train_index, test_index)
 
+    # add white noise to the data
+    if add_white_noise:
+        X_train = whitenoise(X_train, dB)
+        X_test = whitenoise(X_test, dB)
+
     # Standardize the data
     scaler_x = set_standardizer(
         scalewith
@@ -198,6 +193,8 @@ def main(
                 "height_preprocess": height_filtering,
                 "height_lower": height_lower,
                 "height_upper": height_upper,
+                "add_white_noise": add_white_noise,
+                "dB": dB,
             },
         )
 
@@ -213,10 +210,10 @@ def main(
         model = Sequential()
         model.add(Input(shape=(X_train_val.shape[1],)))
 
-        for i in range(config.num_hidden_layers):
+        for i in range(config.hidden_layers_num):
             model.add(
                 Dense(
-                    config.hidden_layer_size,
+                    config.hidden_layers_size,
                     activation=config.activation,
                     kernel_initializer=config.kernel_initializer,
                     kernel_regularizer=set_regularizer(config.regularizer_type, config.l),

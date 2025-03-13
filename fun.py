@@ -372,21 +372,32 @@ def addtrialidentifier(X, trial_ids):
 
     return X_combined
 
-def whitenoise(X, noise_std):
+def whitenoise(X, db):
     features = X[:, :-3] #sensels
     calculated_features = X[:, -3:] #sensor mean, total load, activated sensels
 
+    signal_power = np.mean(features ** 2)
+    noise_power = signal_power / (10 ** (db / 10))
+
     # Generate white noise with 0 mean and standard deviation noise_std
-    noise = np.random.normal(loc=0, scale=noise_std, size=features.shape)
+    noise = np.random.normal(loc=0, scale=np.sqrt(noise_power), size=features.shape)
     features_noisy = features + noise
 
     #recalculate the row means and total load
     row_means = np.round(features_noisy.mean(axis=1, keepdims=True), 2)
     total_load= np.sum(features_noisy, axis=1, keepdims=True)
+    row_means.reshape(-1,1)
+    total_load.reshape(-1,1)
 
     features_noisy = np.hstack((features_noisy, row_means))
     features_noisy = np.hstack((features_noisy, total_load))
     # add the actived sensels back to the noisy data
-    noisy_data = np.hstack((features_noisy, calculated_features[:, 2]))
+    noisy_data = np.hstack((features_noisy, calculated_features[:, 2].reshape(-1,1))) #assumes that sensels with a low activation are not activated even with noise
+
+    '''fig = go.Figure()
+    fig.add_trace(go.Scatter(y=features_noisy[:, 4], mode='lines', name='Noisy'))
+    fig.update_traces(opacity=0.3)
+    fig.add_trace(go.Scatter(y=features[:, 4], mode='lines', name='Original'))
+    fig.show()'''
 
     return noisy_data

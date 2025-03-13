@@ -12,11 +12,13 @@ import numpy as np
 #name. If provided a list of folders,
 #the order of the folders must be the
 #same as the order of the recordings.
+
+#Also change the sector of the sensor in sensor_data.py in line 100 to your specific attachment of the sensor
 ########################################
 
-folder_path_Xsens = ['/Users/jacob/Documents/Microsoft Visual Studio Code Projects/Masterarbeit/Data/Xsens Data/241212_Leopard24_header', '/Users/jacob/Documents/Microsoft Visual Studio Code Projects/Masterarbeit/Data/Xsens Data/241121_Leopard24_header']
-folder_path_Tekscan = ['/Users/jacob/Documents/Microsoft Visual Studio Code Projects/Masterarbeit/Data/Foot Sensor Force Data/241212_Leopard24', '/Users/jacob/Documents/Microsoft Visual Studio Code Projects/Masterarbeit/Data/Foot Sensor Force Data/241121_Leopard24']
-output_name = '241212_241121_combined.csv'
+folder_path_Xsens = ['/Users/jacob/Documents/Microsoft Visual Studio Code Projects/Masterarbeit/Data/Xsens Data/250312_Pferd12']
+folder_path_Tekscan = ['/Users/jacob/Documents/Microsoft Visual Studio Code Projects/Masterarbeit/Data/Foot Sensor Force Data/250312_Pferd12']
+output_name = '250312_Dataset_Pferd12.csv'
 
 #!!!!!!!Dont change anything below this line!!!!!!!
 

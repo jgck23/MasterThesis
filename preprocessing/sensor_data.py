@@ -97,8 +97,8 @@ def load_data(file_path):
     # delete unwanted rows from each frame
     for _ in range(len(sensordata)):
         sensordata[_] = sensordata[_][
-            12:39, :
-        ]  # values have to be adjusted according to the data by hand
+            11:38, :
+        ]  # values have to be adjusted according to the data by hand, for Leopard24: 12:39, Pferd12 11:38, but it wouldnt matter if different
 
     # flatten the data and convert it to an array
     list = []

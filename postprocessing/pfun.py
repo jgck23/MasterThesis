@@ -2,6 +2,11 @@ import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
 from scipy.interpolate import interp1d
+import re
+
+def split_camel_case(text):
+    words = re.findall(r'[A-Z]?[a-z]+|[A-Z]+(?=[A-Z]|$)', text)
+    return ' '.join(words)
 
 def boxplot_error(data, error_column, mode):
     if mode == 'split':
@@ -292,40 +297,49 @@ def plot_split(dataNNsplit, dataSGPRsplit, metric, vtb, nnsgprboth, meanad, save
 
     fig.show(config={'editable': True})
     
-def plot_comparison_nnspgr(nndata, sgprdata, metric, vtb, save):
+def plot_comparison_nnspgr(nndata, sgprdata, metric, vtb, save, targets):
     fig = go.Figure()
     x_sgpr = 'SGPR'
     x_nn = 'NN'
 
-    if vtb != 'both':
-        masknn = nndata[f'{vtb} {metric}'].notna()
-        masksgpr = sgprdata[f'{vtb} {metric}'].notna()
+    allnndata = nndata
+    allsgprdata = sgprdata
 
-        y_sgpr = sgprdata.loc[masksgpr, f'{vtb} {metric}'].values
-        y_nn = nndata.loc[masknn, f'{vtb} {metric}'].values
+    for target in targets:
 
-        fig.add_trace(go.Box(y=y_sgpr, x=[x_sgpr]*len(y_sgpr), name=f'SGPR {vtb.capitalize()} {metric.upper()}', boxpoints='all', jitter=0.3, pointpos=0, boxmean='sd'))
-        fig.add_trace(go.Box(y=y_nn, x=[x_nn]*len(y_nn), name=f'NN {vtb.capitalize()} {metric.upper()}', boxpoints='all', jitter=0.3, pointpos=0, boxmean='sd'))
-        fig.update_layout(title=f'{vtb.capitalize()} {metric} comparison', yaxis_title=f'{vtb.capitalize()} {metric.upper()}', xaxis_title='Model')
-    
-    elif vtb == 'both':
-        masksgpr = sgprdata[f'validation {metric}'].notna()
-        y_sgpr = sgprdata.loc[masksgpr, f'validation {metric}'].values
-        fig.add_trace(go.Box(y=y_sgpr, x=[x_sgpr+' Validation']*len(y_sgpr), name=f'SGPR Validation {metric.upper()}', boxpoints='all', jitter=0.3, pointpos=0, boxmean='sd'))
+        targetfilternn = allnndata['target'] == target
+        targetfiltersgpr = allsgprdata['target'] == target
+        nndata = allnndata.loc[targetfilternn]
+        sgprdata = allsgprdata.loc[targetfiltersgpr]
+        targetname = split_camel_case(target)
 
-        masksgpr = sgprdata[f'test {metric}'].notna()
-        y_sgpr = sgprdata.loc[masksgpr, f'test {metric}'].values
-        fig.add_trace(go.Box(y=y_sgpr, x=[x_sgpr+' Test']*len(y_sgpr), name=f'SGPR Test {metric.upper()}', boxpoints='all', jitter=0.3, pointpos=0, boxmean='sd'))
+        if vtb != 'both':
+            masknn = nndata[f'{vtb} {metric}'].notna()
+            masksgpr = sgprdata[f'{vtb} {metric}'].notna()
 
-        masknn = nndata[f'validation {metric}'].notna()
-        y_nn = nndata.loc[masknn, f'validation {metric}'].values
-        fig.add_trace(go.Box(y=y_nn, x=[x_nn+' Validation']*len(y_nn), name=f'NN Validation {metric.upper()}', boxpoints='all', jitter=0.3, pointpos=0, boxmean='sd'))
+            y_sgpr = sgprdata.loc[masksgpr, f'{vtb} {metric}'].values
+            y_nn = nndata.loc[masknn, f'{vtb} {metric}'].values
 
-        masknn = nndata[f'test {metric}'].notna()
-        y_nn = nndata.loc[masknn, f'test {metric}'].values
-        fig.add_trace(go.Box(y=y_nn, x=[x_nn+' Test']*len(y_nn), name=f'NN Test {metric.upper()}', boxpoints='all', jitter=0.3, pointpos=0, boxmean='sd'))
+            fig.add_trace(go.Box(y=y_sgpr, x=[x_sgpr]*len(y_sgpr), name=f'SGPR {targetname} {vtb.capitalize()} {metric.upper()}', boxpoints='all', jitter=0.3, pointpos=0, boxmean='sd'))
+            fig.add_trace(go.Box(y=y_nn, x=[x_nn]*len(y_nn), name=f'NN {targetname} {vtb.capitalize()} {metric.upper()}', boxpoints='all', jitter=0.3, pointpos=0, boxmean='sd'))
+            
         
-        fig.update_layout(title=f'Validation and Test {metric} comparison', yaxis_title=f'{metric.upper()}')
+        elif vtb == 'both':
+            masksgpr = sgprdata[f'validation {metric}'].notna()
+            y_sgpr = sgprdata.loc[masksgpr, f'validation {metric}'].values
+            fig.add_trace(go.Box(y=y_sgpr, x=[x_sgpr+' Validation']*len(y_sgpr), name=f'SGPR {targetname} Validation {metric.upper()}', boxpoints='all', jitter=0.3, pointpos=0, boxmean='sd'))
+
+            masksgpr = sgprdata[f'test {metric}'].notna()
+            y_sgpr = sgprdata.loc[masksgpr, f'test {metric}'].values
+            fig.add_trace(go.Box(y=y_sgpr, x=[x_sgpr+' Test']*len(y_sgpr), name=f'SGPR {targetname} Test {metric.upper()}', boxpoints='all', jitter=0.3, pointpos=0, boxmean='sd'))
+
+            masknn = nndata[f'validation {metric}'].notna()
+            y_nn = nndata.loc[masknn, f'validation {metric}'].values
+            fig.add_trace(go.Box(y=y_nn, x=[x_nn+' Validation']*len(y_nn), name=f'NN {targetname} Validation {metric.upper()}', boxpoints='all', jitter=0.3, pointpos=0, boxmean='sd'))
+
+            masknn = nndata[f'test {metric}'].notna()
+            y_nn = nndata.loc[masknn, f'test {metric}'].values
+            fig.add_trace(go.Box(y=y_nn, x=[x_nn+' Test']*len(y_nn), name=f'NN {targetname} Test {metric.upper()}', boxpoints='all', jitter=0.3, pointpos=0, boxmean='sd'))
 
     fig.update_layout(legend=dict(x=1, y=1, xanchor="right", yanchor="top", font=dict(size=20), bordercolor="Black", borderwidth=1))
     fig.update_layout(
@@ -333,6 +347,11 @@ def plot_comparison_nnspgr(nndata, sgprdata, metric, vtb, save):
         xaxis=dict(title_font=dict(size=30), tickfont=dict(size=30)),
         yaxis=dict(title_font=dict(size=30), tickfont=dict(size=30)),
     )
+
+    if vtb !='both':
+        fig.update_layout(title=f'{vtb.capitalize()} {metric} comparison', yaxis_title=f'{vtb.capitalize()} {metric.upper()}', xaxis_title='Model')
+    if vtb =='both':
+        fig.update_layout(title=f'Validation and Test {metric} comparison', yaxis_title=f'{metric.upper()}')
     if save: #this section is for saving the plot to a interactive html file
             if vtb == 'both':
                 vtb = 'ValidationTest'
