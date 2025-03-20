@@ -16,9 +16,9 @@ import numpy as np
 #Also change the sector of the sensor in sensor_data.py in line 100 to your specific attachment of the sensor
 ########################################
 
-folder_path_Xsens = ['/Users/jacob/Documents/Microsoft Visual Studio Code Projects/Masterarbeit/Data/Xsens Data/250312_Pferd12']
-folder_path_Tekscan = ['/Users/jacob/Documents/Microsoft Visual Studio Code Projects/Masterarbeit/Data/Foot Sensor Force Data/250312_Pferd12']
-output_name = '250312_Dataset_Pferd12.csv'
+folder_path_Xsens = ['/Users/jacob/Documents/Microsoft Visual Studio Code Projects/Masterarbeit/Data/Xsens Data/250318_Eule3']
+folder_path_Tekscan = ['/Users/jacob/Documents/Microsoft Visual Studio Code Projects/Masterarbeit/Data/Foot Sensor Force Data/250318_Eule3']
+output_name = '250318_Dataset_Eule3.csv'
 
 #!!!!!!!Dont change anything below this line!!!!!!!
 

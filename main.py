@@ -1,9 +1,8 @@
 import Neural_Network as nn
 import sgpr_torch as sgpr
 
-path='Data/250312_Dataset_Pferd12.csv'
+path='Data/250318_Dataset_Eule3.csv'
 
-#project_name='Test_Windows'
 #project_name='241212_Leopard24_TrialNum' # checking for the influence of the number of trials
 #project_name='241212_Leopard24_Depth' #checking for the influence of the drilling depth relative for every trial
 #project_name='241212_Leopard24_Split' # checking for the influence of the split of the data
@@ -13,7 +12,11 @@ path='Data/250312_Dataset_Pferd12.csv'
 #project_name='241212_Leopard24_Optimisation'
 
 #project_name='250312_Pferd12_Split'
-project_name='250312_Pferd12_TrialNum'
+#project_name='250312_Pferd12_TrialNum'
+#project_name='250312_Pferd12_Depth'
+
+#project_name='250318_Eule3_Split'
+project_name='250318_Eule3_TrialNum'
 
 project_name_sgpr = project_name + '_SGPR'
 
@@ -27,7 +30,10 @@ hidden_layer_size=128 #only for NN, change the number of neurons in the hidden l
 #4 @ 128 for elbow angle
 #5 @ 128 for shoulder angle z
 
-learning_rate=0.2 # only for SGPR, change for NN in Neural_Network.py
+learning_rate=0.225 # only for SGPR, change for NN in Neural_Network.py
+#0.1 for wrist angle
+#0.25 for elbow angle
+#0.2 for shoulder angle z, could be higher maybe 0.225
 
 add_propsensor_features=False
 
@@ -42,7 +48,7 @@ variance_thresholding=True
 variance_threshold=0.15
 
 testdata_size=0.15
-random_states=[0,11,22,33,44,55,66,77,88,99] # any int in the range: [0, 2**32 - 1]. Used for the GroupShuffleSplit. Change this to shuffle the data differently. [0,11,22,33,44,55,66,77,88,99]
+random_states=[99] # any int in the range: [0, 2**32 - 1]. Used for the GroupShuffleSplit. Change this to shuffle the data differently. [0,11,22,33,44,55,66,77,88,99]
 seed=21 # any int in the range: [0, 2**32 - 1]. Seed for numpy when using decrease trials. Change this to shuffle the data differently.
 
 scaler_X='MinMaxScaler' # StandardScaler, MinMaxScaler, RobustScaler, QuantileTransformer, PowerTransformer
@@ -50,7 +56,7 @@ scaler_X='MinMaxScaler' # StandardScaler, MinMaxScaler, RobustScaler, QuantileTr
 n_scross_val=5 # min 3
 
 decrease_trials=True
-decrease_trials_sizes= [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0] # 0.2 uses only 20% of the original data, trials are randomly selected
+decrease_trials_sizes= [ 0.6, 0.7, 0.8, 0.9, 1.0] # 0.2 uses only 20% of the original data, trials are randomly selected
 
 decrease_duration=False
 decrease_duration_sizes= [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0] # 0.7 uses only the initial 70% of the data of each trial
