@@ -31,7 +31,7 @@ def boxplot_error(data, error_column, mode):
     
     fig.show()
 
-def plot_ntrials_depth(dataNN, dataSGPR, metric, vtb, nnsgprboth, mode, polydegree,save):
+def plot_ntrials_depth(dataNN, dataSGPR, metric, vtb, nnsgprboth, mode, polydegree,save, target):
     metric= metric.lower()
     vtb= vtb.lower()
     nnsgprboth = nnsgprboth.lower()
@@ -45,6 +45,9 @@ def plot_ntrials_depth(dataNN, dataSGPR, metric, vtb, nnsgprboth, mode, polydegr
         data=dataNN
     elif nnsgprboth == 'sgpr':
         data=dataSGPR
+
+    dataNN = dataNN[dataNN['target'] == target]
+    dataSGPR = dataSGPR[dataSGPR['target'] == target]
     
     if nnsgprboth != 'both':
         if vtb == 'validation' or vtb == 'test':
@@ -145,10 +148,13 @@ def plot_ntrials_depth(dataNN, dataSGPR, metric, vtb, nnsgprboth, mode, polydegr
             fig.write_html(save + '/' + name)
     fig.show(config={'editable': True})
 
-def plot_split(dataNNsplit, dataSGPRsplit, metric, vtb, nnsgprboth, meanad, save): #soll sowohl für NN als auch für SGPR funktionieren, einzeln oder zusammen, val und test 
+def plot_split(dataNNsplit, dataSGPRsplit, metric, vtb, nnsgprboth, meanad, save, target): #soll sowohl für NN als auch für SGPR funktionieren, einzeln oder zusammen, val und test 
     metric= metric.lower()
     vtb= vtb.lower()
     nnsgprboth = nnsgprboth.lower()
+
+    dataNNsplit = dataNNsplit[dataNNsplit['target'] == target]
+    dataSGPRsplit = dataSGPRsplit[dataSGPRsplit['target'] == target]
 
     x1=dataNNsplit['random state'].dropna()
     x2=dataSGPRsplit['random state'].dropna()
@@ -307,6 +313,9 @@ def plot_comparison_nnspgr(nndata, sgprdata, metric, vtb, save, targets):
 
     for target in targets:
 
+        x_nn = f'NN {target}'
+        x_sgpr = f'SGPR {target}'
+
         targetfilternn = allnndata['target'] == target
         targetfiltersgpr = allsgprdata['target'] == target
         nndata = allnndata.loc[targetfilternn]
@@ -320,28 +329,28 @@ def plot_comparison_nnspgr(nndata, sgprdata, metric, vtb, save, targets):
             y_sgpr = sgprdata.loc[masksgpr, f'{vtb} {metric}'].values
             y_nn = nndata.loc[masknn, f'{vtb} {metric}'].values
 
-            fig.add_trace(go.Box(y=y_sgpr, x=[x_sgpr]*len(y_sgpr), name=f'SGPR {targetname} {vtb.capitalize()} {metric.upper()}', boxpoints='all', jitter=0.3, pointpos=0, boxmean='sd'))
-            fig.add_trace(go.Box(y=y_nn, x=[x_nn]*len(y_nn), name=f'NN {targetname} {vtb.capitalize()} {metric.upper()}', boxpoints='all', jitter=0.3, pointpos=0, boxmean='sd'))
+            fig.add_trace(go.Box(y=y_sgpr, x=[x_sgpr]*len(y_sgpr), name=f'SGPR {targetname} {vtb.capitalize()} {metric.upper()}', boxpoints='all', jitter=0.3, pointpos=0, boxmean='sd',showlegend=False))
+            fig.add_trace(go.Box(y=y_nn, x=[x_nn]*len(y_nn), name=f'NN {targetname} {vtb.capitalize()} {metric.upper()}', boxpoints='all', jitter=0.3, pointpos=0, boxmean='sd',showlegend=False))
             
         
         elif vtb == 'both':
             masksgpr = sgprdata[f'validation {metric}'].notna()
             y_sgpr = sgprdata.loc[masksgpr, f'validation {metric}'].values
-            fig.add_trace(go.Box(y=y_sgpr, x=[x_sgpr+' Validation']*len(y_sgpr), name=f'SGPR {targetname} Validation {metric.upper()}', boxpoints='all', jitter=0.3, pointpos=0, boxmean='sd'))
+            fig.add_trace(go.Box(y=y_sgpr, x=[x_sgpr+' Validation']*len(y_sgpr), name=f'SGPR {targetname} Validation {metric.upper()}', boxpoints='all', jitter=0.3, pointpos=0, boxmean='sd',showlegend=False))
 
             masksgpr = sgprdata[f'test {metric}'].notna()
             y_sgpr = sgprdata.loc[masksgpr, f'test {metric}'].values
-            fig.add_trace(go.Box(y=y_sgpr, x=[x_sgpr+' Test']*len(y_sgpr), name=f'SGPR {targetname} Test {metric.upper()}', boxpoints='all', jitter=0.3, pointpos=0, boxmean='sd'))
+            fig.add_trace(go.Box(y=y_sgpr, x=[x_sgpr+' Test']*len(y_sgpr), name=f'SGPR {targetname} Test {metric.upper()}', boxpoints='all', jitter=0.3, pointpos=0, boxmean='sd',showlegend=False))
 
             masknn = nndata[f'validation {metric}'].notna()
             y_nn = nndata.loc[masknn, f'validation {metric}'].values
-            fig.add_trace(go.Box(y=y_nn, x=[x_nn+' Validation']*len(y_nn), name=f'NN {targetname} Validation {metric.upper()}', boxpoints='all', jitter=0.3, pointpos=0, boxmean='sd'))
+            fig.add_trace(go.Box(y=y_nn, x=[x_nn+' Validation']*len(y_nn), name=f'NN {targetname} Validation {metric.upper()}', boxpoints='all', jitter=0.3, pointpos=0, boxmean='sd',showlegend=False))
 
             masknn = nndata[f'test {metric}'].notna()
             y_nn = nndata.loc[masknn, f'test {metric}'].values
-            fig.add_trace(go.Box(y=y_nn, x=[x_nn+' Test']*len(y_nn), name=f'NN {targetname} Test {metric.upper()}', boxpoints='all', jitter=0.3, pointpos=0, boxmean='sd'))
+            fig.add_trace(go.Box(y=y_nn, x=[x_nn+' Test']*len(y_nn), name=f'NN {targetname} Test {metric.upper()}', boxpoints='all', jitter=0.3, pointpos=0, boxmean='sd',showlegend=False))
 
-    fig.update_layout(legend=dict(x=1, y=1, xanchor="right", yanchor="top", font=dict(size=20), bordercolor="Black", borderwidth=1))
+    #fig.update_layout(legend=dict(x=1, y=1, xanchor="right", yanchor="top", font=dict(size=20), bordercolor="Black", borderwidth=1))
     fig.update_layout(
         title_font=dict(size=30),
         xaxis=dict(title_font=dict(size=30), tickfont=dict(size=30)),
@@ -349,9 +358,9 @@ def plot_comparison_nnspgr(nndata, sgprdata, metric, vtb, save, targets):
     )
 
     if vtb !='both':
-        fig.update_layout(title=f'{vtb.capitalize()} {metric} comparison', yaxis_title=f'{vtb.capitalize()} {metric.upper()}', xaxis_title='Model')
+        fig.update_layout(title=f'{vtb.capitalize()} {metric} comparison', yaxis_title=f'{vtb.capitalize()} {metric.upper()}', xaxis_title='Model', font=dict(size=30))
     if vtb =='both':
-        fig.update_layout(title=f'Validation and Test {metric} comparison', yaxis_title=f'{metric.upper()}')
+        fig.update_layout(title=f'Validation and Test {metric} comparison', yaxis_title=f'{metric.upper()}', font=dict(size=30))
     if save: #this section is for saving the plot to a interactive html file
             if vtb == 'both':
                 vtb = 'ValidationTest'

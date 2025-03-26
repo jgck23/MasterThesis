@@ -186,8 +186,8 @@ def main(
     y_test = torch.tensor(y_test, dtype=torch.float64)
 
     # Early Stopping Configuration
-    early_stopping_patience = 16
-    miniumum_delta = 1e-2
+    early_stopping_patience = 20 #16
+    miniumum_delta = 2e-2
     best_val_loss = float("inf")
     patience_counter = 0
 
@@ -265,14 +265,14 @@ def main(
 
         # Optimizer and MLL
         optimizer = torch.optim.Adam(model.parameters(), lr=config.learning_rate)
-        scheduler = ReduceLROnPlateau(optimizer, mode="min", factor=0.5, patience=8)
+        scheduler = ReduceLROnPlateau(optimizer, mode="min", factor=0.5, patience=8)#8
         mll = gpytorch.mlls.ExactMarginalLogLikelihood(likelihood, model)
 
         # Early Stopping Initialization
         best_val_loss = float("inf")
         patience_counter = 0
 
-        for epoch in range(1, config.epoch):  # Max iterations set to 1000
+        for epoch in range(1, config.epoch):  
             model.train()
             likelihood.train()
             optimizer.zero_grad()
@@ -280,6 +280,12 @@ def main(
             loss = -mll(output, y_train_val)
             loss.backward()
             optimizer.step()
+
+            if epoch == 50:
+                early_stopping_patience = 12
+                patience_counter = patience_counter-8
+                if patience_counter < 0:
+                    patience_counter = 0
 
             # Evaluate on validation set
             model.eval()

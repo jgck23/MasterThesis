@@ -7,8 +7,8 @@ import pandas as pd
 
 ##############TRIALNUM/DEPTH##############
 #plot ntrials or depth variation plots
-filenamenn='Data/Post_Processing_Data/241212_Leopard24_Depth_NN_Wrist.csv'
-filenamesgpr='Data/Post_Processing_Data/241212_Leopard24_Depth_SGPR_Wrist.csv'
+filenamenn='Data/Post_Processing_Data/241212_Leopard24_Depth_NN.csv'
+filenamesgpr='Data/Post_Processing_Data/241212_Leopard24_Depth_SGPR.csv'
 #filenamenn='Data/Post_Processing_Data/241212_Leopard24_TrialNum_NN_Elbow.csv'
 #filenamesgpr='Data/Post_Processing_Data/241212_Leopard24_TrialNum_SGPR_Elbow.csv'
 
@@ -24,14 +24,15 @@ plotfilepath = 'Data/Post_Processing_Data/plots'
 mode = 'Depth' # Number of Holes, Depth
 valtestboth = 'test' # validation, test, both (plots only the test or validation metric data or both, eg. compare the test and validation RMSE)
 polydegree = 3 # polynomial degree for the fit
+target = 'WristAngle' # WristAngle, ElbowAngle, ShoulderAngleZ, only one target
 
-#plot_ntrials_depth(datann, datasgpr, metric, valtestboth, model, mode, polydegree,plotfilepath)
+#plot_ntrials_depth(datann, datasgpr, metric, valtestboth, model, mode, polydegree,plotfilepath, target)
 
 ##############SPLIT##############
 #plot split section: always provide the data for the neural network and the sparse gaussian process regression for the same experiment. 
 #experiment split with experiment split and depth with depth, etc.
-filenamenn='Data/Post_Processing_Data/241212_Leopard24_Split_NN_ShoulderFE.csv'
-filenamesgpr='Data/Post_Processing_Data/241212_Leopard24_Split_SGPR_ShoulderFE.csv'
+filenamenn='Data/Post_Processing_Data/241212_Leopard24_Split_NN.csv'
+filenamesgpr='Data/Post_Processing_Data/241212_Leopard24_Split_SGPR.csv'
 #data loading
 datann = pd.read_csv(filenamenn, sep=',')
 datann.columns =datann.columns.str.lower().str.replace(r'[\s_]', ' ', regex=True).str.replace(r'\bval\b', 'validation', regex=True)
@@ -43,12 +44,13 @@ model = 'sgpr' # NN, SGPR, both
 plotfilepath = 'Data/Post_Processing_Data/plots'
 plotmeanabsolutedeviation = False # True, False (not possible for models='both' and valtestboth='both' since too many lines in one plot)
 valtestboth = 'both' # validation, test, both (plots only the test or validation metric data or both, eg. compare the test and validation RMSE)
+target='ElbowAngle' # WristAngle, ElbowAngle, ShoulderAngleZ, only one target possible
 
-#plot_split(datann, datasgpr, metric, valtestboth, model, plotmeanabsolutedeviation, plotfilepath) #comment out if not needed
+#plot_split(datann, datasgpr, metric, valtestboth, model, plotmeanabsolutedeviation, plotfilepath, target) #comment out if not needed
 
 #################PLOT COMPARISON NN vs SGPR#################
-filenamenn='Data/Post_Processing_Data/241212_Leopard24_Chain_NN_Wrist.csv'
-filenamesgpr='Data/Post_Processing_Data/241212_Leopard24_Split_NN_Wrist.csv'
+filenamenn='Data/Post_Processing_Data/250318_Eule3_Split_NN.csv'
+filenamesgpr='Data/Post_Processing_Data/250312_Pferd12_Split_SGPR.csv'
 #data loading
 datann = pd.read_csv(filenamenn, sep=',')
 datann.columns =datann.columns.str.lower().str.replace(r'[\s_]', ' ', regex=True).str.replace(r'\bval\b', 'validation', regex=True)
@@ -56,7 +58,7 @@ datasgpr = pd.read_csv(filenamesgpr, sep=',')
 datasgpr.columns = datasgpr.columns.str.lower().str.replace(r'[\s_]', ' ', regex=True).str.replace(r'\bval\b', 'validation', regex=True)
 #flags:
 metric = 'rmse' # RMSE, MAE, R2 score, loss
-vtb = 'both' # validation, test, both 
+vtb = 'test' # validation, test, both 
 plotfilepath = 'Data/Post_Processing_Data/plots'
-target = ['WristAngle'] # WristAngle, ElbowAngle, ShoulderAngleZ, multiple targets possible
+target = ['WristAngle','ElbowAngle','ShoulderAngleZ'] # WristAngle, ElbowAngle, ShoulderAngleZ, multiple targets possible
 plot_comparison_nnspgr(datann, datasgpr, metric, vtb, plotfilepath, target) #comment out if not needed
