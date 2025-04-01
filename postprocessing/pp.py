@@ -7,10 +7,10 @@ import pandas as pd
 
 ##############TRIALNUM/DEPTH##############
 #plot ntrials or depth variation plots
-filenamenn='Data/Post_Processing_Data/241212_Leopard24_Depth_NN.csv'
-filenamesgpr='Data/Post_Processing_Data/241212_Leopard24_Depth_SGPR.csv'
-#filenamenn='Data/Post_Processing_Data/241212_Leopard24_TrialNum_NN_Elbow.csv'
-#filenamesgpr='Data/Post_Processing_Data/241212_Leopard24_TrialNum_SGPR_Elbow.csv'
+#filenamenn='Data/Post_Processing_Data/241212_Leopard24_Depth_NN.csv'
+#filenamesgpr='Data/Post_Processing_Data/241212_Leopard24_Depth_SGPR.csv'
+filenamenn='Data/Post_Processing_Data/241212_Leopard24_TrialNum_NN.csv'
+filenamesgpr='Data/Post_Processing_Data/241212_Leopard24_TrialNum_SGPR.csv'
 
 #data loading
 datann = pd.read_csv(filenamenn, sep=',')
@@ -21,12 +21,12 @@ datasgpr.columns = datasgpr.columns.str.lower().str.replace(r'[\s_]', ' ', regex
 metric = 'rmse' # RMSE, MAE, R2 score, loss
 model = 'both' # NN, SGPR, both
 plotfilepath = 'Data/Post_Processing_Data/plots'
-mode = 'Depth' # Number of Holes, Depth
+mode = 'Number of Trials' # Number of Holes, Depth
 valtestboth = 'test' # validation, test, both (plots only the test or validation metric data or both, eg. compare the test and validation RMSE)
 polydegree = 3 # polynomial degree for the fit
-target = 'WristAngle' # WristAngle, ElbowAngle, ShoulderAngleZ, only one target
+target = 'ElbowAngle' # WristAngle, ElbowAngle, ShoulderAngleZ, only one target
 
-#plot_ntrials_depth(datann, datasgpr, metric, valtestboth, model, mode, polydegree,plotfilepath, target)
+plot_ntrials_depth(datann, datasgpr, metric, valtestboth, model, mode, polydegree,plotfilepath, target)
 
 ##############SPLIT##############
 #plot split section: always provide the data for the neural network and the sparse gaussian process regression for the same experiment. 
@@ -49,8 +49,8 @@ target='ElbowAngle' # WristAngle, ElbowAngle, ShoulderAngleZ, only one target po
 #plot_split(datann, datasgpr, metric, valtestboth, model, plotmeanabsolutedeviation, plotfilepath, target) #comment out if not needed
 
 #################PLOT COMPARISON NN vs SGPR#################
-filenamenn='Data/Post_Processing_Data/250318_Eule3_Split_NN.csv'
-filenamesgpr='Data/Post_Processing_Data/250312_Pferd12_Split_SGPR.csv'
+filenamenn='Data/Post_Processing_Data/241212_Leopard24_Split_NN.csv'
+filenamesgpr='Data/Post_Processing_Data/241212_Leopard24_Split_SGPR.csv'
 #data loading
 datann = pd.read_csv(filenamenn, sep=',')
 datann.columns =datann.columns.str.lower().str.replace(r'[\s_]', ' ', regex=True).str.replace(r'\bval\b', 'validation', regex=True)
@@ -61,4 +61,4 @@ metric = 'rmse' # RMSE, MAE, R2 score, loss
 vtb = 'test' # validation, test, both 
 plotfilepath = 'Data/Post_Processing_Data/plots'
 target = ['WristAngle','ElbowAngle','ShoulderAngleZ'] # WristAngle, ElbowAngle, ShoulderAngleZ, multiple targets possible
-plot_comparison_nnspgr(datann, datasgpr, metric, vtb, plotfilepath, target) #comment out if not needed
+#plot_comparison_nnspgr(datann, datasgpr, metric, vtb, plotfilepath, target) #comment out if not needed

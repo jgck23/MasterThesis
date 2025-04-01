@@ -3,6 +3,8 @@ import pandas as pd
 import plotly.graph_objects as go
 from scipy.interpolate import interp1d
 import re
+from PIL import Image
+
 
 def split_camel_case(text):
     words = re.findall(r'[A-Z]?[a-z]+|[A-Z]+(?=[A-Z]|$)', text)
@@ -36,7 +38,7 @@ def plot_ntrials_depth(dataNN, dataSGPR, metric, vtb, nnsgprboth, mode, polydegr
     vtb= vtb.lower()
     nnsgprboth = nnsgprboth.lower()
     fig = go.Figure()
-    if mode =='Number of Holes':
+    if mode =='Number of Trials':
         error_column='decrease trials size'
     elif mode == 'Depth':
         error_column='decrease duration size'
@@ -54,14 +56,14 @@ def plot_ntrials_depth(dataNN, dataSGPR, metric, vtb, nnsgprboth, mode, polydegr
             mask = data[error_column].notna()
             x_values = data.loc[mask, error_column].values*100
             y_values = data.loc[mask, f'{vtb} {metric}'].values
-            fig.add_trace(go.Scatter(y=y_values, x=x_values, mode='markers', name=f'{vtb.capitalize()} {metric.upper()}', marker=dict(size=8)))
-            fig.update_layout(title=f'{vtb.capitalize()} {metric} plot', yaxis_title=f'{vtb.capitalize()} {metric.upper()}', xaxis_title=f'{mode.capitalize()} [%]')
+            fig.add_trace(go.Scatter(y=y_values, x=x_values, mode='markers', name=f'{nnsgprboth.upper()}', marker=dict(size=8)))
+            fig.update_layout(title=f'{vtb.capitalize()} {metric} plot', yaxis_title=f'Prediction Error ({vtb.capitalize()} {metric.upper()} [°])', xaxis_title=f'{mode.capitalize()} [%]')
             degree = polydegree
             A=np.vander(x_values, degree +1)
             coeffs, _, _, _ = np.linalg.lstsq(A, y_values, rcond=None)
             x = np.linspace(min(x_values), max(x_values), 100)
             y = np.polyval(coeffs, x)
-            fig.add_trace(go.Scatter(x=x, y=y, mode='lines', name=f'x^{degree} Fit', line=dict(color='red')))
+            fig.add_trace(go.Scatter(x=x, y=y, mode='lines', name=f'x^{degree} Fit {nnsgprboth.upper()}', line=dict(color='red')))
         
         elif vtb == 'both':
             mask = data[error_column].notna()
@@ -89,25 +91,25 @@ def plot_ntrials_depth(dataNN, dataSGPR, metric, vtb, nnsgprboth, mode, polydegr
             masksgpr = dataSGPR[error_column].notna()
             x_values_nn = dataNN.loc[masknn, error_column].values*100
             y_values = dataNN.loc[masknn, f'{vtb} {metric}'].values
-            fig.add_trace(go.Scatter(y=y_values, x=x_values_nn-0.5, mode='markers', name=f'NN {vtb.capitalize()} {metric.upper()}', marker=dict(size=8, color='red')))
+            fig.add_trace(go.Scatter(y=y_values, x=x_values_nn-0.5, mode='markers', name=f'DNN', marker=dict(size=8, color='red')))
 
             x_values_sgpr = dataSGPR.loc[masksgpr, error_column].values*100
             y_values = dataSGPR.loc[masksgpr, f'{vtb} {metric}'].values
-            fig.add_trace(go.Scatter(y=y_values, x=x_values_sgpr+0.5, mode='markers', name=f'SGPR {vtb.capitalize()} {metric.upper()}', marker=dict(size=8, color='blue')))
-            fig.update_layout(title=f'NN and SGPR {vtb.capitalize()} {metric} plot', yaxis_title=f'{vtb.capitalize()} {metric.upper()}', xaxis_title=f'{mode.capitalize()} [%]')
+            fig.add_trace(go.Scatter(y=y_values, x=x_values_sgpr+0.5, mode='markers', name=f'SGPR', marker=dict(size=8, color='blue')))
+            fig.update_layout(title=f'NN and SGPR {vtb.capitalize()} {metric} plot', yaxis_title=f'Prediction Error ({vtb.capitalize()} {metric.upper()})', xaxis_title=f'{mode.capitalize()} [%]')
             
             degree = polydegree
             A=np.vander(x_values_nn, degree +1)
             coeffs, _, _, _ = np.linalg.lstsq(A, dataNN.loc[masknn, f'{vtb} {metric}'].values, rcond=None)
             x = np.linspace(min(x_values_nn), max(x_values_nn), 100)
             y = np.polyval(coeffs, x)
-            fig.add_trace(go.Scatter(x=x, y=y, mode='lines', name=f'x^{degree} Fit for NN {vtb.capitalize()}', line=dict(color='red')))
+            fig.add_trace(go.Scatter(x=x, y=y, mode='lines', name=f'x^{degree} Fit DNN', line=dict(color='red')))
             
             A=np.vander(x_values_sgpr, degree +1)
             coeffs, _, _, _ = np.linalg.lstsq(A, dataSGPR.loc[masksgpr, f'{vtb} {metric}'].values, rcond=None)
             x = np.linspace(min(x_values_sgpr), max(x_values_sgpr), 100)
             y = np.polyval(coeffs, x)
-            fig.add_trace(go.Scatter(x=x, y=y, mode='lines', name=f'x^{degree} Fit for SGPR {vtb.capitalize()}', line=dict(color='blue')))
+            fig.add_trace(go.Scatter(x=x, y=y, mode='lines', name=f'x^{degree} Fit SGPR', line=dict(color='blue')))
         elif vtb == 'both':
             masknn = dataNN[error_column].notna()
             masksgpr = dataSGPR[error_column].notna()
@@ -137,7 +139,7 @@ def plot_ntrials_depth(dataNN, dataSGPR, metric, vtb, nnsgprboth, mode, polydegr
             fig.add_trace(go.Scatter(x=x, y=y, mode='lines', name=f'x^{degree} fit for NN test', line=dict(color='red')))'''
 
     fig.update_layout(legend=dict(x=1, y=1, xanchor="right", yanchor="top", font=dict(size=30), bordercolor="Black", borderwidth=1))
-    fig.update_layout(xaxis=dict(dtick=10)) #yaxis=dict(range=[0,40])
+    fig.update_layout(xaxis=dict(dtick=10),yaxis=dict(range=(0,40), dtick=10)) #yaxis=dict(range=[0,40])
     fig.update_layout(
         title_font=dict(size=30),
         xaxis=dict(title_font=dict(size=30), tickfont=dict(size=30)),
@@ -311,16 +313,26 @@ def plot_comparison_nnspgr(nndata, sgprdata, metric, vtb, save, targets):
     allnndata = nndata
     allsgprdata = sgprdata
 
-    for target in targets:
+    colors=['purple','green','orange']
 
-        x_nn = f'NN {target}'
-        x_sgpr = f'SGPR {target}'
-
+    for target, color in zip (targets, colors):
         targetfilternn = allnndata['target'] == target
         targetfiltersgpr = allsgprdata['target'] == target
         nndata = allnndata.loc[targetfilternn]
         sgprdata = allsgprdata.loc[targetfiltersgpr]
         targetname = split_camel_case(target)
+
+        if target == 'WristAngle':
+            x_nn = 'NN W'
+            x_sgpr = 'SGPR W'
+        elif target == 'ElbowAngle':
+            x_nn = 'NN E'
+            x_sgpr = 'SGPR E'
+        elif target == 'ShoulderAngleZ':
+            x_nn = 'NN S'
+            x_sgpr = 'SGPR S'
+        #x_nn = f'NN {targetname}'
+        #x_sgpr = f'SGPR {targetname}'
 
         if vtb != 'both':
             masknn = nndata[f'{vtb} {metric}'].notna()
@@ -329,8 +341,8 @@ def plot_comparison_nnspgr(nndata, sgprdata, metric, vtb, save, targets):
             y_sgpr = sgprdata.loc[masksgpr, f'{vtb} {metric}'].values
             y_nn = nndata.loc[masknn, f'{vtb} {metric}'].values
 
-            fig.add_trace(go.Box(y=y_sgpr, x=[x_sgpr]*len(y_sgpr), name=f'SGPR {targetname} {vtb.capitalize()} {metric.upper()}', boxpoints='all', jitter=0.3, pointpos=0, boxmean='sd',showlegend=False))
-            fig.add_trace(go.Box(y=y_nn, x=[x_nn]*len(y_nn), name=f'NN {targetname} {vtb.capitalize()} {metric.upper()}', boxpoints='all', jitter=0.3, pointpos=0, boxmean='sd',showlegend=False))
+            fig.add_trace(go.Box(y=y_sgpr, x=[x_sgpr]*len(y_sgpr), name=f'SGPR {targetname} {vtb.capitalize()} {metric.upper()}', boxpoints='outliers', jitter=0.3, pointpos=0,marker=dict(size=10),showlegend=False, marker_color=color,line=dict(width=4)))
+            fig.add_trace(go.Box(y=y_nn, x=[x_nn]*len(y_nn), name=f'NN {targetname} {vtb.capitalize()} {metric.upper()}', boxpoints='outliers', jitter=0.3, pointpos=0,marker=dict(size=10),showlegend=False, marker_color=color,line=dict(width=4)))
             
         
         elif vtb == 'both':
@@ -352,13 +364,15 @@ def plot_comparison_nnspgr(nndata, sgprdata, metric, vtb, save, targets):
 
     #fig.update_layout(legend=dict(x=1, y=1, xanchor="right", yanchor="top", font=dict(size=20), bordercolor="Black", borderwidth=1))
     fig.update_layout(
+        boxgroupgap=0.1,
+        boxgap=0,
         title_font=dict(size=30),
-        xaxis=dict(title_font=dict(size=30), tickfont=dict(size=30)),
-        yaxis=dict(title_font=dict(size=30), tickfont=dict(size=30)),
+        xaxis=dict(title_font=dict(size=30), tickfont=dict(size=20)),
+        yaxis=dict(title_font=dict(size=30), tickfont=dict(size=20)),
     )
 
     if vtb !='both':
-        fig.update_layout(title=f'{vtb.capitalize()} {metric} comparison', yaxis_title=f'{vtb.capitalize()} {metric.upper()}', xaxis_title='Model', font=dict(size=30))
+        fig.update_layout(title=f'{vtb.capitalize()} {metric} comparison', yaxis_title=f'{vtb.capitalize()} {metric.upper()}', font=dict(size=30))
     if vtb =='both':
         fig.update_layout(title=f'Validation and Test {metric} comparison', yaxis_title=f'{metric.upper()}', font=dict(size=30))
     if save: #this section is for saving the plot to a interactive html file
@@ -366,6 +380,25 @@ def plot_comparison_nnspgr(nndata, sgprdata, metric, vtb, save, targets):
                 vtb = 'ValidationTest'
             name=f'{vtb}_{metric}_NNvsSGPR.html'
             fig.write_html(save + '/' + name, config={"editable": True})
+
+    #if targets is list:
+    image = Image.open('arm_3.png')
+    fig.add_layout_image(
+    dict(
+        source=image,
+        xref="x",
+        yref="y",
+        x= -0.6,
+        y=20,
+        sizex=6.5,
+        sizey=20,
+        sizing="stretch",
+        opacity=0.25,
+        layer="below",)
+    )
+    fig.update_layout(template="plotly_white")
+    fig.update_layout(yaxis=dict(range=[0, 20], dtick=5))
+    #fig.update_layout(height=1000)
 
     fig.show(config={'editable': True})
     

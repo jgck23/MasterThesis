@@ -10,4 +10,6 @@ CNN.py
 # Ignore data files
 *.mat
 *.numbers
+*.png
+*.json
 /Data
