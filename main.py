@@ -1,7 +1,7 @@
 import Neural_Network as nn
 import sgpr_torch as sgpr
 
-path='Data/250312_Dataset_Pferd12.csv'
+path='Data/250318_Dataset_Eule3.csv'
 
 #project_name='241212_Leopard24_TrialNum' # checking for the influence of the number of trials
 #project_name='241212_Leopard24_Depth' #checking for the influence of the drilling depth relative for every trial
@@ -14,20 +14,22 @@ path='Data/250312_Dataset_Pferd12.csv'
 #project_name='250312_Pferd12_Split'
 #project_name='250312_Pferd12_TrialNum'
 #project_name='250312_Pferd12_Depth'
+#project_name='250312_Pferd12_WhiteNoise'
 
 #project_name='250318_Eule3_Split'
-#project_name='250318_Eule3_TrialNum'
+project_name='250318_Eule3_TrialNum'
 #project_name='250318_Eule3_Depth'
-project_name='250318_Eule3_Optimisation'
+#project_name='250318_Eule3_Optimisation'
+#project_name = '250318_Eule3_WhiteNoise' 
 
 project_name_sgpr = project_name + '_SGPR'
 
-#model_type='SGPR' 
-model_type='NN'
+model_type='SGPR' 
+#model_type='NN'
 
 target='WristAngle' # WristAngle, ElbowAngle, ShoulderAngleZ (flexion/extension), ShoulderAngleX (abduction/adduction)
-hidden_layer_num=3 # only for NN, change the number of hidden layers
-hidden_layer_size=64 #only for NN, change the number of neurons in the hidden layers
+hidden_layer_num=4 # only for NN, change the number of hidden layers
+hidden_layer_size=128 #only for NN, change the number of neurons in the hidden layers
 #3 @ 64 for wrist angle
 #4 @ 128 for elbow angle
 #5 @ 128 for shoulder angle z
@@ -57,7 +59,7 @@ scaler_X='MinMaxScaler' # StandardScaler, MinMaxScaler, RobustScaler, QuantileTr
 
 n_scross_val=5 # min 3
 
-decrease_trials=False
+decrease_trials=True
 decrease_trials_sizes= [0.1, 0.2, 0.3, 0.4, 0.5, 0.6] # 0.2 uses only 20% of the original data, trials are randomly selected
 
 decrease_duration=False
@@ -65,7 +67,7 @@ decrease_duration_sizes= [0.1, 0.2, 0.3, 0.4, 0.5, 0.6]
  # 0.7 uses only the initial 70% of the data of each trial
 
 add_white_noise=False
-snr=15 #dB >30 almost no influence, 15-30 low noise, 5-15 high noise, <5 very high noise
+snr=30 #dB >30 almost no influence, 15-30 low noise, 5-15 high noise, <5 very high noise
 
 for random_state in random_states:
         if decrease_duration and decrease_trials:

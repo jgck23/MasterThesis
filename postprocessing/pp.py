@@ -9,8 +9,13 @@ import pandas as pd
 #plot ntrials or depth variation plots
 #filenamenn='Data/Post_Processing_Data/241212_Leopard24_Depth_NN.csv'
 #filenamesgpr='Data/Post_Processing_Data/241212_Leopard24_Depth_SGPR.csv'
-filenamenn='Data/Post_Processing_Data/241212_Leopard24_TrialNum_NN.csv'
-filenamesgpr='Data/Post_Processing_Data/241212_Leopard24_TrialNum_SGPR.csv'
+#filenamenn='Data/Post_Processing_Data/241212_Leopard24_TrialNum_NN.csv'
+#filenamesgpr='Data/Post_Processing_Data/241212_Leopard24_TrialNum_SGPR.csv'
+
+#filenamenn='Data/Post_Processing_Data/250312_Pferd12_TrialNum_NN.csv'
+#filenamesgpr='Data/Post_Processing_Data/250312_Pferd12_TrialNum_SGPR.csv'
+filenamenn='Data/Post_Processing_Data/250312_Pferd12_Depth_NN.csv'
+filenamesgpr='Data/Post_Processing_Data/250312_Pferd12_Depth_SGPR.csv'
 
 #data loading
 datann = pd.read_csv(filenamenn, sep=',')
@@ -21,12 +26,13 @@ datasgpr.columns = datasgpr.columns.str.lower().str.replace(r'[\s_]', ' ', regex
 metric = 'rmse' # RMSE, MAE, R2 score, loss
 model = 'both' # NN, SGPR, both
 plotfilepath = 'Data/Post_Processing_Data/plots'
-mode = 'Number of Trials' # Number of Holes, Depth
+mode = 'Depth' # Number of Trials, Depth
 valtestboth = 'test' # validation, test, both (plots only the test or validation metric data or both, eg. compare the test and validation RMSE)
 polydegree = 3 # polynomial degree for the fit
-target = 'ElbowAngle' # WristAngle, ElbowAngle, ShoulderAngleZ, only one target
+target = 'ShoulderAngleZ' # WristAngle, ElbowAngle, ShoulderAngleZ, only one target
+y_max = 40 # y axis max value
 
-plot_ntrials_depth(datann, datasgpr, metric, valtestboth, model, mode, polydegree,plotfilepath, target)
+#plot_ntrials_depth(datann, datasgpr, metric, valtestboth, model, mode, polydegree,plotfilepath, target, y_max)
 
 ##############SPLIT##############
 #plot split section: always provide the data for the neural network and the sparse gaussian process regression for the same experiment. 
@@ -49,8 +55,8 @@ target='ElbowAngle' # WristAngle, ElbowAngle, ShoulderAngleZ, only one target po
 #plot_split(datann, datasgpr, metric, valtestboth, model, plotmeanabsolutedeviation, plotfilepath, target) #comment out if not needed
 
 #################PLOT COMPARISON NN vs SGPR#################
-filenamenn='Data/Post_Processing_Data/241212_Leopard24_Split_NN.csv'
-filenamesgpr='Data/Post_Processing_Data/241212_Leopard24_Split_SGPR.csv'
+filenamenn='Data/Post_Processing_Data/250318_Eule3_Split_NN.csv'
+filenamesgpr='Data/Post_Processing_Data/250318_Eule3_Split_SGPR.csv'
 #data loading
 datann = pd.read_csv(filenamenn, sep=',')
 datann.columns =datann.columns.str.lower().str.replace(r'[\s_]', ' ', regex=True).str.replace(r'\bval\b', 'validation', regex=True)
@@ -62,3 +68,25 @@ vtb = 'test' # validation, test, both
 plotfilepath = 'Data/Post_Processing_Data/plots'
 target = ['WristAngle','ElbowAngle','ShoulderAngleZ'] # WristAngle, ElbowAngle, ShoulderAngleZ, multiple targets possible
 #plot_comparison_nnspgr(datann, datasgpr, metric, vtb, plotfilepath, target) #comment out if not needed
+
+#################Plot White Noise Comparison #################
+fileWhiteNoiseNN='Data/Post_Processing_Data/250318_Eule3_WhiteNoise_NN.csv'
+fileWhiteNoiseSGPR='Data/Post_Processing_Data/250318_Eule3_WhiteNoise_SGPR.csv'
+fileNN='Data/Post_Processing_Data/250318_Eule3_Split_NN.csv'
+fileSGPR='Data/Post_Processing_Data/250318_Eule3_Split_SGPR.csv'
+
+#data loading
+datawnnn = pd.read_csv(fileWhiteNoiseNN, sep=',')
+datawnnn.columns =datawnnn.columns.str.lower().str.replace(r'[\s_]', ' ', regex=True).str.replace(r'\bval\b', 'validation', regex=True)
+datawnsgpr = pd.read_csv(fileWhiteNoiseSGPR, sep=',')
+datawnsgpr.columns = datawnsgpr.columns.str.lower().str.replace(r'[\s_]', ' ', regex=True).str.replace(r'\bval\b', 'validation', regex=True)
+datann = pd.read_csv(fileNN, sep=',')
+datann.columns =datann.columns.str.lower().str.replace(r'[\s_]', ' ', regex=True).str.replace(r'\bval\b', 'validation', regex=True)
+datasgpr = pd.read_csv(fileSGPR, sep=',')
+datasgpr.columns = datasgpr.columns.str.lower().str.replace(r'[\s_]', ' ', regex=True).str.replace(r'\bval\b', 'validation', regex=True)
+#flags:
+metric = 'rmse' # RMSE, MAE, R2 score, loss
+vtb = 'test' # validation, test, both 
+plotfilepath = 'Data/Post_Processing_Data/plots'
+target = 'ElbowAngle' # only for Split Files to filter out the correct target, currently only the 'ElbowAngle' is used
+plot_white_noise(datawnnn, datawnsgpr,datann, datasgpr, metric, vtb, plotfilepath, target) #comment out if not needed
