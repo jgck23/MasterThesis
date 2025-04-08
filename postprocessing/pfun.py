@@ -50,6 +50,8 @@ def plot_ntrials_depth(dataNN, dataSGPR, metric, vtb, nnsgprboth, mode, polydegr
 
     dataNN = dataNN[dataNN['target'] == target]
     dataSGPR = dataSGPR[dataSGPR['target'] == target]
+
+    x_values_pp = []
     
     if nnsgprboth != 'both':
         if vtb == 'validation' or vtb == 'test':
@@ -84,6 +86,8 @@ def plot_ntrials_depth(dataNN, dataSGPR, metric, vtb, nnsgprboth, mode, polydegr
             coeffs, _, _, _ = np.linalg.lstsq(A, data.loc[mask, f'test {metric}'].values, rcond=None)
             y = np.polyval(coeffs, x)
             fig.add_trace(go.Scatter(x=x, y=y, mode='lines', name=f'x^{degree} Fit for Test', line=dict(color='blue')))
+        
+        x_values_pp = x_values
     
     elif nnsgprboth == 'both':
         if vtb == 'validation' or vtb == 'test':
@@ -96,7 +100,7 @@ def plot_ntrials_depth(dataNN, dataSGPR, metric, vtb, nnsgprboth, mode, polydegr
             x_values_sgpr = dataSGPR.loc[masksgpr, error_column].values*100
             y_values = dataSGPR.loc[masksgpr, f'{vtb} {metric}'].values
             fig.add_trace(go.Scatter(y=y_values, x=x_values_sgpr+0.5, mode='markers', name=f'SGPR', marker=dict(size=8, color='blue')))
-            fig.update_layout(title=f'NN and SGPR {vtb.capitalize()} {metric} plot', yaxis_title=f'Prediction Error ({vtb.capitalize()} {metric.upper()})', xaxis_title=f'{mode.capitalize()} [%]')
+            fig.update_layout(title=f'NN and SGPR {vtb.capitalize()} {metric} plot', yaxis_title=f'Prediction Error ({vtb.capitalize()} {metric.upper()} [°])', xaxis_title=f'{mode} [%]')
             
             degree = polydegree
             A=np.vander(x_values_nn, degree +1)
@@ -137,14 +141,26 @@ def plot_ntrials_depth(dataNN, dataSGPR, metric, vtb, nnsgprboth, mode, polydegr
             coeffs, _, _, _ = np.linalg.lstsq(A, dataNN.loc[mask, f'test {metric}'].values, rcond=None)
             y = np.polyval(coeffs, x)
             fig.add_trace(go.Scatter(x=x, y=y, mode='lines', name=f'x^{degree} fit for NN test', line=dict(color='red')))'''
+        x_values_pp = x_values_nn
 
     fig.update_layout(legend=dict(x=1, y=1, xanchor="right", yanchor="top", font=dict(size=30), bordercolor="Black", borderwidth=1))
-    fig.update_layout(xaxis=dict(dtick=10),yaxis=dict(range=(0,y_max), dtick=10)) #yaxis=dict(range=[0,40])
+    fig.update_layout(yaxis=dict(range=(0,y_max), dtick=10))
     fig.update_layout(
         title_font=dict(size=30),
-        xaxis=dict(title_font=dict(size=30), tickfont=dict(size=30)),
+        xaxis=dict(title_font=dict(size=30), tickfont=dict(size=30), dtick=10),
         yaxis=dict(title_font=dict(size=30), tickfont=dict(size=30)),
     )
+
+    if mode == 'Number of Trials':
+        update_text = [str(round(x * 266*0.01)) for x in x_values_pp]
+        fig.update_xaxes(
+            tickmode='array',
+            tickvals=x_values_pp,     
+            ticktext=update_text,    
+        )
+    elif mode == 'Depth':
+        fig.update_layout(xaxis=dict(range=[0, 100], dtick=round(100 / 10)))
+
     if save:
             name=f'{metric}_vs_{mode}_for_{nnsgprboth}.html'
             fig.write_html(save + '/' + name)
@@ -341,8 +357,8 @@ def plot_comparison_nnspgr(nndata, sgprdata, metric, vtb, save, targets):
             y_sgpr = sgprdata.loc[masksgpr, f'{vtb} {metric}'].values
             y_nn = nndata.loc[masknn, f'{vtb} {metric}'].values
 
-            fig.add_trace(go.Box(y=y_sgpr, x=[x_sgpr]*len(y_sgpr), name=f'SGPR {targetname} {vtb.capitalize()} {metric.upper()}', boxpoints='outliers', jitter=0.3, pointpos=0,marker=dict(size=10),showlegend=False, marker_color=color,line=dict(width=4), boxmean='sd'))
-            fig.add_trace(go.Box(y=y_nn, x=[x_nn]*len(y_nn), name=f'NN {targetname} {vtb.capitalize()} {metric.upper()}', boxpoints='outliers', jitter=0.3, pointpos=0,marker=dict(size=10),showlegend=False, marker_color=color,line=dict(width=4), boxmean='sd'))
+            fig.add_trace(go.Box(y=y_sgpr, x=[x_sgpr]*len(y_sgpr), name=f'SGPR {targetname} {vtb.capitalize()} {metric.upper()}', boxpoints='outliers', jitter=0, pointpos=0,marker=dict(size=8),showlegend=False, marker_color=color,line=dict(width=4)))
+            fig.add_trace(go.Box(y=y_nn, x=[x_nn]*len(y_nn), name=f'NN {targetname} {vtb.capitalize()} {metric.upper()}', boxpoints='outliers', jitter=0, pointpos=0,marker=dict(size=8),showlegend=False, marker_color=color,line=dict(width=4)))
             
         
         elif vtb == 'both':
@@ -449,8 +465,8 @@ def plot_white_noise(wnnndata, wnsgprdata, nndata, sgprdata, metric, vtb, save, 
             y_wnsgpr = wnsgprdata.loc[maskwnsgpr, f'{vtb} {metric}'].values
             y_wnnn = wnnndata.loc[maskwnnn, f'{vtb} {metric}'].values
 
-            fig.add_trace(go.Box(y=y_wnsgpr, x=[f'SGPR {distinctSNR[i]} dB']*len(y_wnsgpr), name=f'SGPR {targetname} {vtb.capitalize()} {metric.upper()}', boxpoints='outliers', jitter=0.3, pointpos=0,marker=dict(size=10),showlegend=False, marker_color=color[i],line=dict(width=4),boxmean='sd'))
-            fig.add_trace(go.Box(y=y_wnnn, x=[f'DNN {distinctSNR[i]} dB']*len(y_wnnn), name=f'NN {targetname} {vtb.capitalize()} {metric.upper()}', boxpoints='outliers', jitter=0.3, pointpos=0,marker=dict(size=10),showlegend=False, marker_color=color[i],line=dict(width=4),boxmean='sd'))
+            fig.add_trace(go.Box(y=y_wnsgpr, x=[f'SGPR {distinctSNR[i]} dB']*len(y_wnsgpr), name=f'SGPR {targetname} {vtb.capitalize()} {metric.upper()}', boxpoints='outliers', jitter=0, pointpos=0,marker=dict(size=10),showlegend=False, marker_color=color[i],line=dict(width=4)))
+            fig.add_trace(go.Box(y=y_wnnn, x=[f'DNN {distinctSNR[i]} dB']*len(y_wnnn), name=f'NN {targetname} {vtb.capitalize()} {metric.upper()}', boxpoints='outliers', jitter=0, pointpos=0,marker=dict(size=10),showlegend=False, marker_color=color[i],line=dict(width=4)))
             
         
         elif vtb == 'both':
@@ -475,15 +491,15 @@ def plot_white_noise(wnnndata, wnsgprdata, nndata, sgprdata, metric, vtb, save, 
 
     y_sgpr = sgprdata.loc[masksgpr, f'{vtb} {metric}'].values
     y_nn = nndata.loc[masknn, f'{vtb} {metric}'].values
-    fig.add_trace(go.Box(y=y_sgpr, x=['SGPR no noise']*len(y_sgpr), name=f'SGPR {targetname} {vtb.capitalize()} {metric.upper()}', boxpoints='outliers', jitter=0.3, pointpos=0,marker=dict(size=10),showlegend=False, marker_color='orange',line=dict(width=4),boxmean='sd'))
-    fig.add_trace(go.Box(y=y_nn, x=['DNN no noise']*len(y_nn), name=f'NN {targetname} {vtb.capitalize()} {metric.upper()}', boxpoints='outliers', jitter=0.3, pointpos=0,marker=dict(size=10),showlegend=False, marker_color='orange',line=dict(width=4),boxmean='sd'))
+    fig.add_trace(go.Box(y=y_sgpr, x=['SGPR no noise']*len(y_sgpr), name=f'SGPR {targetname} {vtb.capitalize()} {metric.upper()}', boxpoints='outliers', jitter=0, pointpos=0,marker=dict(size=10),showlegend=False, marker_color='orange',line=dict(width=4)))
+    fig.add_trace(go.Box(y=y_nn, x=['DNN no noise']*len(y_nn), name=f'NN {targetname} {vtb.capitalize()} {metric.upper()}', boxpoints='outliers', jitter=0, pointpos=0,marker=dict(size=10),showlegend=False, marker_color='orange',line=dict(width=4)))
     
     fig.update_layout(
         boxgroupgap=0.1,
         boxgap=0,
         title_font=dict(size=30),
-        xaxis=dict(title_font=dict(size=30), tickfont=dict(size=20)),
-        yaxis=dict(title_font=dict(size=30), tickfont=dict(size=20)),
+        xaxis=dict(title_font=dict(size=30), tickfont=dict(size=30)),
+        yaxis=dict(title_font=dict(size=30), tickfont=dict(size=30), range=[0, 20], dtick=5),
     )
 
     if vtb !='both':

@@ -282,7 +282,7 @@ def main(
             optimizer.step()
 
             if epoch == 50:
-                early_stopping_patience = 10
+                early_stopping_patience = 12
                 patience_counter = patience_counter-8
                 if patience_counter < 0:
                     patience_counter = 0
