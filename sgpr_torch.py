@@ -1,3 +1,4 @@
+# sgpr logic after: https://docs.gpytorch.ai/en/v1.12/examples/02_Scalable_Exact_GPs/SGPR_Regression_CUDA.html (last accessed 2025-04-14)
 import gpytorch
 import torch
 import pandas as pd
