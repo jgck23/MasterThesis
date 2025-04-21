@@ -1,3 +1,5 @@
+# this file is used to create a .csv from all the runs in a wandb project, usefull if the number of runs is greater than 
+# 1000. Then only this method works to extract all information from the runs.
 import wandb
 import pandas as pd
 

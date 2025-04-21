@@ -6,6 +6,7 @@ Test_BA_Data_LSTM.py
 CNN.py
 .DS_Store
 /wandb
+/_archive
 
 # Ignore data files
 *.mat
