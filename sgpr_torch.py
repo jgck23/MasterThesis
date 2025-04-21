@@ -1,17 +1,10 @@
 # sgpr logic after: https://docs.gpytorch.ai/en/v1.12/examples/02_Scalable_Exact_GPs/SGPR_Regression_CUDA.html (last accessed 2025-04-14)
+# this is the file for the SGPR model with wandb logging
 import gpytorch
 import torch
 import pandas as pd
 from sklearn.model_selection import GroupShuffleSplit
-import plotly.graph_objects as go
 import numpy as np
-import colorcet as cc
-from sklearn.preprocessing import (
-    StandardScaler,
-    MinMaxScaler,
-    QuantileTransformer,
-    RobustScaler,
-)
 from sklearn.metrics import r2_score, mean_absolute_error
 from sklearn.model_selection import GroupKFold
 from fun import *
@@ -19,7 +12,6 @@ from sklearn.feature_selection import VarianceThreshold
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 import wandb
 import os
-import copy
 
 # Inducing point logic, selecting every 500th point seems like a lot for 65300 total points. But when leaving the test set
 # and validation set out, respectively 20% and for 2 fold cross validation 50%, that leaves roughly 26.200 points for
@@ -28,7 +20,7 @@ import copy
 # https://github.com/cornellius-gp/gpytorch/issues/1787 saving of the hyperparameters is possible but not the posterior,
 # so the training data has to be instantiated with the hyperparams to make predictions, still doesnt work
 # https://github.com/cornellius-gp/gpytorch/issues/1308 all possible solutions have been tested but the val loss after reloading
-# the model with the lowest val loss while training is always higher or lower than the lowest val loss during training. Not
+# the model with the lowest val loss while training is always different than the lowest val loss during training. Not
 # significant but still a problem.
 
 
@@ -39,23 +31,19 @@ class GPModel(gpytorch.models.ExactGP):
         self.mean_module = gpytorch.means.ConstantMean()
 
         self.base_covar_module = gpytorch.kernels.ScaleKernel(
-            gpytorch.kernels.MaternKernel(nu=5 / 2)
-        )  # , outputscale_constraint=gpytorch.constraints.Interval(0.01, 1.0)
+            gpytorch.kernels.MaternKernel(nu=5 / 2)  # define the kernel
+        )
 
-        # step=int(train_x.shape[0]/500) #indepent of the number of datapoints there will be 500 inducing points
         inducing_points = train_x[
-            ::75, :
-        ].clone()  # every stepth point is selected as inducing point
+            ::75,
+            :,  # define the number of inducing points, here: every 75th point is selected
+        ].clone()
         self.inducing_points = torch.nn.Parameter(inducing_points)
         self.covar_module = gpytorch.kernels.InducingPointKernel(
             self.base_covar_module,
             inducing_points=inducing_points,
             likelihood=likelihood,
         )
-
-        # self.base_covar_module.base_kernel.lengthscale = lengthscale_prior.mean
-        # self.base_covar_module.outputscale = outputscale_prior.mean
-        # self.likelihood.noise = torch.tensor(0.1)
 
     def forward(self, x):
         mean_x = self.mean_module(x)
@@ -90,8 +78,13 @@ def main(
     dB,
     add_white_noise,
     learning_rate,
+    earlystoppingpatience,
+    miniumimprovement,
+    max_epochs,
+    scheduler_patience,
 ):
     np.random.seed(npseed)
+    ############ DATA LOADING AND PREPROCESSING ############
     data = pd.read_csv(fileName, sep=",")
 
     if (
@@ -181,16 +174,18 @@ def main(
     X_train = scaler_x.fit_transform(X_train)
     X_test = scaler_x.transform(X_test)
 
+    # define the float type, float 64 is more precise than float 32, float 32 is faster
     X_test = torch.tensor(
         X_test, dtype=torch.float64
     )  # train and val tensors are handeled below
     y_test = torch.tensor(y_test, dtype=torch.float64)
 
     # Early Stopping Configuration
-    early_stopping_patience = 20 #16
-    miniumum_delta = 2e-2
+    early_stopping_patience = earlystoppingpatience
+    miniumum_delta = miniumimprovement
     best_val_loss = float("inf")
     patience_counter = 0
+    initial_patience = early_stopping_patience
 
     gkf = GroupKFold(n_splits=n_cross_val)
     fold = 1
@@ -202,9 +197,6 @@ def main(
     test_R2_scores = []
     val_maes = []
     test_maes = []
-
-    # Results storage
-    fold_results = []
 
     for train_index, val_index in gkf.split(X_train, y_train, groups=trial_ids_train):
         print()
@@ -236,7 +228,7 @@ def main(
                 "learning_rate": learning_rate,
                 "add_white_noise": add_white_noise,
                 "SNR": dB,
-                "epoch": 100,
+                "epoch": max_epochs,
                 "FYI": "The saved model is the best model according to the lowest validation loss during training.",
                 "VarianceThreshold": var_thresholding,
                 "variance_threshold": var_threshold,
@@ -266,14 +258,16 @@ def main(
 
         # Optimizer and MLL
         optimizer = torch.optim.Adam(model.parameters(), lr=config.learning_rate)
-        scheduler = ReduceLROnPlateau(optimizer, mode="min", factor=0.5, patience=8)#8
+        scheduler = ReduceLROnPlateau(
+            optimizer, mode="min", factor=0.5, patience=scheduler_patience
+        )
         mll = gpytorch.mlls.ExactMarginalLogLikelihood(likelihood, model)
 
         # Early Stopping Initialization
         best_val_loss = float("inf")
         patience_counter = 0
 
-        for epoch in range(1, config.epoch):  
+        for epoch in range(1, config.epoch):
             model.train()
             likelihood.train()
             optimizer.zero_grad()
@@ -282,9 +276,13 @@ def main(
             loss.backward()
             optimizer.step()
 
+            # this is to dynamically change the early stopping patience after the initial convergence, otherwise training takes too long
             if epoch == 50:
                 early_stopping_patience = 12
-                patience_counter = patience_counter-8
+                # the following line resets the patience counter if just before epoch 50 a new best val loss was found or lets it potentially stop at 51 if for already a longer time no new improvement was recorded, in unsure calculate for yourself
+                patience_counter = patience_counter - (
+                    initial_patience - patience_counter
+                )
                 if patience_counter < 0:
                     patience_counter = 0
 
@@ -304,7 +302,6 @@ def main(
                     else:
                         patience_counter = 0
                     best_val_loss = val_loss
-                    # torch.save(model.state_dict(), 'model_state.pth')
                     torch.save(
                         {
                             "model_state_dict": model.state_dict(),
@@ -334,10 +331,6 @@ def main(
 
             model.covar_module._clear_cache()
 
-        # Load the best model for this fold
-        """model.load_state_dict(best_model_state, strict=True)
-        likelihood.load_state_dict(best_likelihood_state, strict=True)
-        model.covar_module.inducing_points = torch.nn.Parameter(best_inducing_points)"""
         # Reload the model and likelihood
         model.covar_module.base_kernel._clear_cache()
         model.base_covar_module._clear_cache()
@@ -367,6 +360,7 @@ def main(
         wandb.log({"Outputscale": model.base_covar_module.outputscale.item()})
         wandb.log({"Noise": model.likelihood.noise.item()})
 
+        # Evaluate on validation and test set
         with torch.no_grad(), gpytorch.settings.fast_pred_var():
             voutput = model(X_val)
             vloss = -mll(voutput, y_val).item()

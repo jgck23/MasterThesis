@@ -12,8 +12,12 @@ import numpy as np
 #name. If provided a list of folders,
 #the order of the folders must be the
 #same as the order of the recordings.
+#Tekscan data aswell as Xsens data are 
+#both filtered with 1Hz lowpass filter 
+#edge padding. Change the frequencey 
+#in the respective files if needed.
 
-#Also change the sector of the sensor in sensor_data.py in line 100 to your specific attachment of the sensor
+#Also change the sector of the sensor in sensor_data.py in line 93 to your specific attachment of the sensor to the power tool handle.
 ########################################
 
 folder_path_Xsens = ['/Users/jacob/Documents/Microsoft Visual Studio Code Projects/Masterarbeit/Data/Xsens Data/250318_Eule3']

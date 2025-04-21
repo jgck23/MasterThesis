@@ -1,29 +1,28 @@
+# this is the main file to run the experiments for the DNN and the SGPR (train-test split, Number of Trials, Depth, White Noise)
 import Neural_Network as nn
 import sgpr_torch as sgpr
 
-path='Data/250318_Dataset_Eule3.csv'
+path='Data/250318_Dataset_Eule3.csv' #specify the path to the dataset
 
+############### EXPERIMENT NAME FOR WANDB LOGGING ################
 #project_name='241212_Leopard24_TrialNum' # checking for the influence of the number of trials
 #project_name='241212_Leopard24_Depth' #checking for the influence of the drilling depth relative for every trial
 #project_name='241212_Leopard24_Split' # checking for the influence of the split of the data
-#project_name='241212_Leopard24_wo_middle' # checking for the influence of the middle part of the data
-#project_name='241212_241121_combined'
 #project_name='241212_Leopard24_WhiteNoise'
-#project_name='241212_Leopard24_Optimisation'
 
-#project_name='250312_Pferd12_Split'
 #project_name='250312_Pferd12_TrialNum'
 #project_name='250312_Pferd12_Depth'
+#project_name='250312_Pferd12_Split'
 #project_name='250312_Pferd12_WhiteNoise'
 
-#project_name='250318_Eule3_Split'
 project_name='250318_Eule3_TrialNum'
 #project_name='250318_Eule3_Depth'
-#project_name='250318_Eule3_Optimisation'
+#project_name='250318_Eule3_Split'
 #project_name = '250318_Eule3_WhiteNoise' 
 
-project_name_sgpr = project_name + '_SGPR'
+project_name_sgpr = project_name + '_SGPR' #for the SGPR the project name is automatically set here!
 
+################ MODEL TYPE AND TARGET SELECTION ################
 model_type='SGPR' 
 #model_type='NN'
 
@@ -35,40 +34,38 @@ hidden_layer_size=128 #only for NN, change the number of neurons in the hidden l
 #5 @ 128 for shoulder angle z
 
 learning_rate=0.01 # only for SGPR, change for NN in Neural_Network.py
-#0.1 for wrist angle
-#0.25 for elbow angle
-#0.2 for shoulder angle z, could be higher maybe 0.225
+early_stopping_patience=35 # only for SGPR, change for NN in Neural_Network.py !!!line 273 in sgpr_torch.py: mechanism to adjust this value dynamically when more than 50 epochs are trained!!! (to reduce training time)
+early_stopping_minimum_delta = 2e-2 # only for SGPR, change for NN in Neural_Network.py
+max_epochs= 100 # only for SGPR, change for NN in Neural_Network.py
+learning_rate_scheduler_patience = 12 # only for SGPR, change for NN in Neural_Network.py, after the patience the learning rate is halved
 
-add_propsensor_features=False
-
-height_filtering=False 
+################# ADDITIONAL PARAMETERS AND PREPROCESSING STEPS ################
+add_propsensor_features=False # optionally add the features from the propsensor of the hammer drill
+height_filtering=False # if True, the data is filtered by the relative height of the Xsens right hand height
 invert_selection=False # if True, the height values outside the range are selected
 height_lower=400
 height_upper=500
-
-create_trial_identifier=False
-
-variance_thresholding=True
-variance_threshold=0.15
-
-testdata_size=0.15
-random_states=[0,11,22,33,44,55,66,77,88,99] # any int in the range: [0, 2**32 - 1]. Used for the GroupShuffleSplit. Change this to shuffle the data differently. [0,11,22,33,44,55,66,77,88,99]
-seed=21 # any int in the range: [0, 2**32 - 1]. Seed for numpy when using decrease trials. Change this to shuffle the data differently.
-
+create_trial_identifier=False # create a trial identifier that can optionally be used as additional feature
+variance_thresholding=True # if True, the variance thresholding is applied to the data
+variance_threshold=0.15 # set the variance threshold
+testdata_size=0.15 # set the size of the test data in the range [0,1]
+seed=21 # any int in the range: [0, 2**32 - 1]. Seed for numpy when using decrease trials. Change this to shuffle the data differently. But leave it at 21.
 scaler_X='MinMaxScaler' # StandardScaler, MinMaxScaler, RobustScaler, QuantileTransformer, PowerTransformer
+n_scross_val=5 # set the number of folds for the cross validation, min. 3
 
-n_scross_val=5 # min 3
+################ EXPERIMENTAL SETTINGS ################
+random_states=[0,11,22,33,44,55,66,77,88,99]# any int in the range: [0, 2**32 - 1]. Used for the GroupShuffleSplit. Change this to shuffle the data differently. [0,11,22,33,44,55,66,77,88,99]
 
-decrease_trials=True
-decrease_trials_sizes= [0.1, 0.2, 0.3, 0.4, 0.5, 0.6] # 0.2 uses only 20% of the original data, trials are randomly selected
+decrease_trials=False
+decrease_trials_sizes= [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0] 
 
 decrease_duration=False
-decrease_duration_sizes= [0.1, 0.2, 0.3, 0.4, 0.5, 0.6]
- # 0.7 uses only the initial 70% of the data of each trial
+decrease_duration_sizes= [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
 
 add_white_noise=False
 snr=30 #dB >30 almost no influence, 15-30 low noise, 5-15 high noise, <5 very high noise
 
+################ RUN THE EXPERIMENTS ################ (leave this as it is)
 for random_state in random_states:
         if decrease_duration and decrease_trials:
                 raise ValueError('Both decrease_trials and decrease_duration are set to True. Please set only one to True.')
@@ -82,7 +79,7 @@ for random_state in random_states:
                         elif model_type == 'SGPR':
                                 sgpr.main(path, height_filtering, height_lower, height_upper, invert_selection, decrease_trials, decrease_trials_size,
                                 decrease_duration, decrease_duration_size, project_name_sgpr, add_propsensor_features, target, create_trial_identifier, 
-                                variance_thresholding, variance_threshold, testdata_size, random_state, scaler_X, n_scross_val, seed, snr, add_white_noise, learning_rate)
+                                variance_thresholding, variance_threshold, testdata_size, random_state, scaler_X, n_scross_val, seed, snr, add_white_noise, learning_rate, early_stopping_patience, early_stopping_minimum_delta, max_epochs, learning_rate_scheduler_patience)
                         else:
                                 print('Model type not supported')
         elif decrease_duration:
@@ -95,7 +92,7 @@ for random_state in random_states:
                         elif model_type == 'SGPR':
                                 sgpr.main(path, height_filtering, height_lower, height_upper, invert_selection, decrease_trials, decrease_trials_size,
                                 decrease_duration, decrease_duration_size, project_name_sgpr, add_propsensor_features, target, create_trial_identifier, 
-                                variance_thresholding, variance_threshold, testdata_size, random_state, scaler_X, n_scross_val, seed, snr, add_white_noise, learning_rate)
+                                variance_thresholding, variance_threshold, testdata_size, random_state, scaler_X, n_scross_val, seed, snr, add_white_noise, learning_rate, early_stopping_patience, early_stopping_minimum_delta, max_epochs, learning_rate_scheduler_patience)
                         else:
                                 print('Model type not supported')
         else:
@@ -108,7 +105,7 @@ for random_state in random_states:
                 elif model_type == 'SGPR':
                         sgpr.main(path, height_filtering, height_lower, height_upper, invert_selection, decrease_trials, decrease_trials_size,
                         decrease_duration, decrease_duration_size, project_name_sgpr, add_propsensor_features, target, create_trial_identifier, 
-                        variance_thresholding, variance_threshold, testdata_size, random_state, scaler_X, n_scross_val, seed, snr, add_white_noise, learning_rate)
+                        variance_thresholding, variance_threshold, testdata_size, random_state, scaler_X, n_scross_val, seed, snr, add_white_noise, learning_rate, early_stopping_patience, early_stopping_minimum_delta, max_epochs, learning_rate_scheduler_patience)
                 else:
                         print('Model type not supported')
         

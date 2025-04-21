@@ -1,9 +1,10 @@
+# this file is used to save the wandb files from a project into a local folder
 import wandb
 import os
 
 api = wandb.Api()
-runs = api.runs("ursja-karlsruhe-institute-of-technology/Test_Windows")
-downloadfolder = "/Users/jacob/Documents/Microsoft Visual Studio Code Projects/Masterarbeit/Data/WandB_Downloads/Test_Windows"
+runs = api.runs("ursja-karlsruhe-institute-of-technology/250312_Pferd12_Chained")
+downloadfolder = "//ipek.kit.edu/dfs/Messdaten/Messdaten_8TB/4828_Jubot_Forcebased_Posture_Estimation/MA_Sembrizki/pferd12/WandB/Chained_NN"
 
 # Iterate through all runs
 for run in runs:

@@ -1,3 +1,4 @@
+# this file reads the Tekscan .csv files, smoothes the data and gives it to comb_forcesensor_xsens.py
 import os
 import pandas as pd
 import numpy as np
@@ -6,11 +7,12 @@ from scipy.signal import convolve
 import matplotlib.pyplot as plt
 from natsort import natsorted
 
+
 def main(folder_paths):
     NN_array = []
     N_frames_array = []
     trials = 0
-    for folder_path in folder_paths: 
+    for folder_path in folder_paths:
         # sensor data already has cut off for minimum values (S.Helmstetter)
         file_names = [
             f
@@ -29,12 +31,12 @@ def main(folder_paths):
             # load the data from the file
             data = load_data(file_path)
             # smooth the data per trial
-            data = smooth_data(data, f_cutoff=5, recording_frequency=60)
-            data = np.insert(data, 0, i + 1 +trials, axis=1)  # add trial count
-            
-            #Add mean of each row and count of activated sensels to the last columns
+            data = smooth_data(data, f_cutoff=1, recording_frequency=60)
+            data = np.insert(data, 0, i + 1 + trials, axis=1)  # add trial count
+
+            # Add mean of each row and count of activated sensels to the last columns
             row_means = np.round(data.mean(axis=1, keepdims=True), 2)
-            total_load= np.sum(data, axis=1, keepdims=True)
+            total_load = np.sum(data, axis=1, keepdims=True)
             activated_sensels = np.sum(data > 0, axis=1, keepdims=True)
             data = np.hstack((data, row_means))
             data = np.hstack((data, total_load))
@@ -45,19 +47,6 @@ def main(folder_paths):
 
         trials += len(file_names)
 
-        # save the data to a csv file
-        #df1 = pd.DataFrame(NNarray)
-        '''df.to_csv(
-            "Data/Foot Sensor Force Data/241212_Leopard24_FSensor.csv",
-            index=False,
-            header=False,
-        )'''
-        #df2 = pd.DataFrame(N_frames)
-        '''df.to_csv(
-            "Data/Foot Sensor Force Data/241212_Leopard24_N_frames_FSensor.csv",
-            index=False,
-            header=False,
-        )'''
         NN_array.extend(NN)
         N_frames_array.extend(N_frames)
 
@@ -71,9 +60,9 @@ def load_data(file_path):
     start_there = False
     with open(file_path, "r") as file:
         lines = file.readlines()[:-1]  # Exclude the last line because of '@@'
-        for line in lines: #iterate line for line through the file
-            line = line.strip() #removes leading and trailing whitespaces
-            if line.startswith("ASCII_DATA @@"): #check when the data starts
+        for line in lines:  # iterate line for line through the file
+            line = line.strip()  # removes leading and trailing whitespaces
+            if line.startswith("ASCII_DATA @@"):  # check when the data starts
                 start_there = True
                 continue
 
@@ -81,16 +70,20 @@ def load_data(file_path):
                 continue
             else:
                 if line.startswith("Frame"):
-                    if currentframe: #checks if the current frame is not empty, so for the first frame this is skipped 
+                    if (
+                        currentframe
+                    ):  # checks if the current frame is not empty, so for the first frame this is skipped
                         frame_array = np.array(currentframe, dtype=int)
                         sensordata.append(frame_array)
                         currentframe = []
-                elif line: #line.startswith(("0", "B"))
+                elif line:  # line.startswith(("0", "B"))
                     # Process the current row, converting 'B' to 9999 to filter it out later
-                    row = [9999 if val == "B" else int(val) for val in line.split(",")] #writes the values of each line split by ',' in 'row' and filters for 'B'
-                    currentframe.append(row) #appends the row to the current frame
+                    row = [
+                        9999 if val == "B" else int(val) for val in line.split(",")
+                    ]  # writes the values of each line split by ',' in 'row' and filters for 'B'
+                    currentframe.append(row)  # appends the row to the current frame
 
-    if currentframe: #appends the last frame to sensordata
+    if currentframe:  # appends the last frame to sensordata
         frame_array = np.array(currentframe, dtype=int)
         sensordata.append(frame_array)
 
@@ -138,11 +131,6 @@ def smooth_data(data, f_cutoff=1, recording_frequency=60):
         smoothed_data[:, i] = smoothed_signal[
             pad_width:-pad_width
         ]  # Trim the padded output to match original length
-
-    """plt.plot(data[:, 200], label='Original')
-    plt.plot(smoothed_data[:, 200], label='Smoothed')
-    plt.legend()
-    plt.show()"""
 
     return smoothed_data
 

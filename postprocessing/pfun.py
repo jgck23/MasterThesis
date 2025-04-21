@@ -46,7 +46,7 @@ def avg_fun(xvalues, yvalues):
     return xarray, yarray
 
 
-def plot_ntrials_depth(dataNN, dataSGPR, metric, vtb, nnsgprboth, mode, polydegree,save, target, y_max, avg, offset_markers, depth_area, depthareastart, trialnumimprovement):
+def plot_ntrials_depth(dataNN, dataSGPR, metric, vtb, nnsgprboth, mode, polydegree,save, target, y_max, avg, offset_markers, depth_area, depthareastart, trialnumimprovement, absoluteaxis):
     metric= metric.lower()
     vtb= vtb.lower()
     nnsgprboth = nnsgprboth.lower()
@@ -178,20 +178,23 @@ def plot_ntrials_depth(dataNN, dataSGPR, metric, vtb, nnsgprboth, mode, polydegr
             coeffs, _, _, _ = np.linalg.lstsq(A, dataNN.loc[mask, f'test {metric}'].values, rcond=None)
             y = np.polyval(coeffs, x)
             fig.add_trace(go.Scatter(x=x, y=y, mode='lines', name=f'x^{degree} fit for NN test', line=dict(color='red')))'''
-        x_values_pp = x_values_nn
+        x_values_pp = dataNN.loc[masknn, error_column].values*100
 
     # this if section is to update the x axis labels from relative values to absolute values
     if mode == 'Number of Trials':
-        update_text = [str(round(x * 266 * 0.01)) for x in x_values_pp] # x in x_values_pp are in 10, 20, etc. so to get the absolute value of trials for each step: *266 Trials * 0.01
-        fig.update_xaxes(
-            tickmode='array',
-            tickvals=x_values_pp,     
-            ticktext=update_text,    
-        )
-        fig.update_layout(xaxis_title=f'{mode}')
+        if absoluteaxis:
+            update_text = [str(round(x * 266 * 0.01)) for x in x_values_pp] # x in x_values_pp are in 10, 20, etc. so to get the absolute value of trials for each step: *266 Trials * 0.01
+            fig.update_xaxes(
+                tickmode='array',
+                tickvals=x_values_pp,     
+                ticktext=update_text,    
+            )
+            fig.update_layout(xaxis_title=f'{mode}')
         fig.update_layout(legend_traceorder='reversed') # this is to keep the same order as if trialnumimprovement=True
 
         if trialnumimprovement:
+            if not avg:
+                x_values_nn, y_values_nn = avg_fun(x_values_nn, y_values_nn)
             # Plot two dashed lines for the improvement
             x_values = list(range(10, 101))
             y3_values = [np.max(y_values_nn)]* len(x_values)
@@ -239,15 +242,17 @@ def plot_ntrials_depth(dataNN, dataSGPR, metric, vtb, nnsgprboth, mode, polydegr
             ])'''
 
     elif mode == 'Depth':
-        max_dp = np.max(dataNN['total datapoints'].values)
-        avg_t = max_dp / (np.max(dataNN['trial number'].values)*60) # Trials * 60 Hz
-        update_text = [str(round(x * 0.01 * avg_t, 2)) for x in x_values_pp]
-        fig.update_xaxes(
-            tickmode='array',
-            tickvals=x_values_pp,     
-            ticktext=update_text,    
-        )
-        fig.update_layout(xaxis_title='Data per Trial [s]')
+        fig.update_layout(xaxis_title='Data per Trial [%]')
+        if absoluteaxis:
+            max_dp = np.max(dataNN['total datapoints'].values)
+            avg_t = max_dp / (np.max(dataNN['trial number'].values)*60) # Trials * 60 Hz
+            update_text = [str(round(x * 0.01 * avg_t, 2)) for x in x_values_pp]
+            fig.update_xaxes(
+                tickmode='array',
+                tickvals=x_values_pp+0.5,     
+                ticktext=update_text,    
+            )
+            fig.update_layout(xaxis_title='Data per Trial [s]')
         fig.update_layout(legend_traceorder='reversed') # this is to keep the same order as if depth_area=True
 
         if depth_area:
@@ -460,7 +465,7 @@ def plot_split(dataNNsplit, dataSGPRsplit, metric, vtb, nnsgprboth, meanad, save
 
     fig.show(config={'editable': True})
     
-def plot_comparison_nnspgr(nndata, sgprdata, metric, vtb, save, targets):
+def plot_comparison_nnspgr(nndata, sgprdata, metric, vtb, save, targets, ymax):
     fig = go.Figure()
     x_sgpr = 'SGPR'
     x_nn = 'NN'
@@ -496,8 +501,8 @@ def plot_comparison_nnspgr(nndata, sgprdata, metric, vtb, save, targets):
             y_sgpr = sgprdata.loc[masksgpr, f'{vtb} {metric}'].values
             y_nn = nndata.loc[masknn, f'{vtb} {metric}'].values
 
-            fig.add_trace(go.Box(y=y_sgpr, x=[x_sgpr]*len(y_sgpr), name=f'SGPR {targetname} {vtb.capitalize()} {metric.upper()}', boxpoints='outliers', jitter=0, pointpos=0,marker=dict(size=8),showlegend=False, marker_color=color,line=dict(width=4)))
-            fig.add_trace(go.Box(y=y_nn, x=[x_nn]*len(y_nn), name=f'NN {targetname} {vtb.capitalize()} {metric.upper()}', boxpoints='outliers', jitter=0, pointpos=0,marker=dict(size=8),showlegend=False, marker_color=color,line=dict(width=4)))
+            fig.add_trace(go.Box(y=y_sgpr, x=[x_sgpr]*len(y_sgpr), name=f'SGPR {targetname} {vtb.capitalize()} {metric.upper()}', boxpoints='outliers', jitter=0, pointpos=0,marker=dict(size=8),showlegend=False, marker_color=color,line=dict(width=4), boxmean='sd'))
+            fig.add_trace(go.Box(y=y_nn, x=[x_nn]*len(y_nn), name=f'NN {targetname} {vtb.capitalize()} {metric.upper()}', boxpoints='outliers', jitter=0, pointpos=0,marker=dict(size=8),showlegend=False, marker_color=color,line=dict(width=4),boxmean='sd'))
             
         
         elif vtb == 'both':
@@ -552,7 +557,7 @@ def plot_comparison_nnspgr(nndata, sgprdata, metric, vtb, save, targets):
         layer="below",)
     )
     fig.update_layout(template="plotly_white")
-    fig.update_layout(yaxis=dict(range=[0, 20], dtick=5))
+    fig.update_layout(yaxis=dict(range=[0, ymax], dtick=5))
     #fig.update_layout(height=1000)
 
     fig.show(config={'editable': True})

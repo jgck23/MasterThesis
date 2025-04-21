@@ -1,5 +1,5 @@
-#https://github.com/wandb/wandb/issues/5726 
-
+# script similar to https://github.com/wandb/wandb/issues/5726 
+# this script is used to copy runs from one wandb project to another
 import wandb
 import json
 

@@ -1,46 +1,23 @@
+# this is the chained version of Neural_Network.py
 import numpy as np
 import pandas as pd
 from sklearn.model_selection import (
     train_test_split,
-    GroupShuffleSplit,
     GroupKFold,
 )
-from sklearn.preprocessing import (
-    StandardScaler,
-    MinMaxScaler,
-    RobustScaler,
-    QuantileTransformer,
-)
-from sklearn.feature_selection import VarianceThreshold
 import tensorflow as tf
 import numpy as np
-
-# from keras.models import Sequential
 from keras.models import Sequential
 from keras.layers import Dense, Dropout, Input
 from sklearn.metrics import root_mean_squared_error, r2_score, mean_absolute_error
-import matplotlib.pyplot as plt
 import os
 import wandb
-from fun import (
-    load_data,
-    set_optimizer,
-    set_regularizer,
-    data_leakage,
-    plot_y,
-    plot_y_hist,
-    plot_x_scaler,
-    set_standardizer,
-    addtrialidentifier,
-    plot_height_hist,
-    plot_angle_vs_height,
-)
-from wandb.integration.keras import (
-    WandbMetricsLogger
-)
+from fun import *
+from wandb.integration.keras import WandbMetricsLogger
 import random
 
 os.environ["WANDB_RUN_GROUP"] = "experiment-" + wandb.util.generate_id()
+
 
 def main(
     X_train,
@@ -129,7 +106,7 @@ def main(
                 "epoch": 1000,
                 "batch_size": 64,  # 20
                 "regularizer_type": "l1",  # l1, l2, l1_l2
-                "l": 0.001, # lambda value for l1 regularization, lambda for l2 and l1_l2 can be set equally as well
+                "l": 0.001,  # lambda value for l1 regularization, lambda for l2 and l1_l2 can be set equally as well
                 "FYI": "The saved model is the best model according to the lowest validation loss during training.",
                 "VarianceThreshold": var_thresholding,
                 "variance_threshold": var_threshold,
@@ -157,11 +134,13 @@ def main(
                     config.hidden_layers_size,
                     activation=config.activation,
                     kernel_initializer=config.kernel_initializer,
-                    kernel_regularizer=set_regularizer(config.regularizer_type, config.l),
+                    kernel_regularizer=set_regularizer(
+                        config.regularizer_type, config.l
+                    ),
                 )
             )
             model.add(Dropout(config.dropout))
-        
+
         model.add(
             Dense(1)
         )  # , activation = 'linear', kernel_initializer='GlorotUniform'))#, activation="relu"))
@@ -262,27 +241,6 @@ def main(
         wandb.log({"Residual Plot": plot2})
         wandb.log({"Actual and Predicted Values line plot": plot3})
 
-        """# Create SHAP explainer
-        explainer = shap.Explainer(model, X_test)
-        shap_values = explainer(X_test)
-        # Compute mean absolute SHAP values per feature
-        feature_importance = np.abs(shap_values.values).mean(axis=0)
-        # Save feature importance
-        np.save("shap_feature_importance.npy", feature_importance)
-        # Plot or print feature importance
-        shap.summary_plot(shap_values, X_test)"""
-
-        """# Plot histogram of model weights per layer
-        for layer in model.layers:
-            if hasattr(layer, 'weights') and layer.get_weights():
-                weights = layer.get_weights()[0]
-                plt.figure(figsize=(10, 6))
-                plt.hist(weights.flatten(), bins=50, alpha=0.75)
-                plt.title(f'Layer {layer.name} Weights Distribution')
-                plt.xlabel('Weight Value')
-                plt.ylabel('Frequency')
-                wandb.log({f'Layer {layer.name} Weights Distribution': plt})"""
-
         # print statements
         print(f"{'Metric':<20} {'Validation':<15} {'Test':<15}")
         print(f"{'-'*50}")
@@ -341,7 +299,7 @@ def main(
             "best_fold_rmse": best_fold_rmse,
         }
     )
-    wandb.save("Neural_Network.py") #save the script
+    wandb.save("Neural_Network.py")  # save the script
     wandb.finish()
 
     if chaining:

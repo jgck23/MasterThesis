@@ -1,3 +1,4 @@
+# this is the main file for the DNN with WandB logging
 import numpy as np
 import pandas as pd
 from sklearn.model_selection import (
@@ -5,17 +6,9 @@ from sklearn.model_selection import (
     GroupShuffleSplit,
     GroupKFold,
 )
-from sklearn.preprocessing import (
-    StandardScaler,
-    MinMaxScaler,
-    RobustScaler,
-    QuantileTransformer,
-)
 from sklearn.feature_selection import VarianceThreshold
 import tensorflow as tf
 import numpy as np
-
-# from keras.models import Sequential
 from keras.models import Sequential
 from keras.layers import Dense, Dropout, Input
 from sklearn.metrics import root_mean_squared_error, r2_score, mean_absolute_error
@@ -23,12 +16,11 @@ import matplotlib.pyplot as plt
 import os
 import wandb
 from fun import *
-from wandb.integration.keras import (
-    WandbMetricsLogger
-)
+from wandb.integration.keras import WandbMetricsLogger
 import random
 
 os.environ["WANDB_RUN_GROUP"] = "experiment-" + wandb.util.generate_id()
+
 
 def main(
     fileName,
@@ -55,19 +47,26 @@ def main(
     hidden_layers_size,
     dB,
     add_white_noise,
-    chaining=False, # if not given is set to False
+    chaining=False,  # if not given is set to False
 ):
-    # fileName='NN_Bachelor_Thesis/ba_trials_extra.csv'
     np.random.seed(npseed)
     tf.random.set_seed(42)
     random.seed(42)
     data = pd.read_csv(fileName, sep=",")
 
-    if height_filtering and invert_selection: # watch out, this can lead to new all zero columns
-        selection = (data.loc[:, "RightHandZ"] > height_lower) & (data.loc[:, "RightHandZ"] < height_upper)
+    if (
+        height_filtering and invert_selection
+    ):  # watch out, this can lead to new all zero columns
+        selection = (data.loc[:, "RightHandZ"] > height_lower) & (
+            data.loc[:, "RightHandZ"] < height_upper
+        )
         data = data[~selection]
-    elif height_filtering and not invert_selection: # watch out, this can lead to new all zero columns
-        selection = (data.loc[:, "RightHandZ"] > height_lower) & (data.loc[:, "RightHandZ"] < height_upper)
+    elif (
+        height_filtering and not invert_selection
+    ):  # watch out, this can lead to new all zero columns
+        selection = (data.loc[:, "RightHandZ"] > height_lower) & (
+            data.loc[:, "RightHandZ"] < height_upper
+        )
         data = data[selection]
 
     if decrease_trials:
@@ -75,7 +74,9 @@ def main(
         unique_trials = np.unique(trial_ids)
         n_trials = unique_trials.size
         n_trials = round(decrease_trials_size * n_trials)
-        random_trials = np.random.choice(unique_trials, n_trials, replace=False) # set random seed !!!!!
+        random_trials = np.random.choice(
+            unique_trials, n_trials, replace=False
+        )  # set random seed !!!!!
         data = data[data["Trial_ID"].isin(random_trials)]
 
     if decrease_duration:
@@ -88,7 +89,7 @@ def main(
             mask.extend(trial_indices[: int(decrease_duration_size * trial_length)])
         data = data.loc[mask]
 
-    total_datapoints=data.shape[0]
+    total_datapoints = data.shape[0]
     print(f"Total number of datapoints: {total_datapoints}")
 
     # Split the data into features and target
@@ -114,7 +115,9 @@ def main(
     n_test_groups = round(testdata_size * n_groups)
 
     # Initialize GroupShuffleSplit and split the data
-    gss = GroupShuffleSplit(n_splits=1, test_size=n_test_groups, random_state=random_int)
+    gss = GroupShuffleSplit(
+        n_splits=1, test_size=n_test_groups, random_state=random_int
+    )
     for train_index, test_index in gss.split(X, y, groups=trial_ids):
         X_train, X_test = X[train_index], X[test_index]
         y_train, y_test = y[train_index], y[test_index]
@@ -186,7 +189,7 @@ def main(
                 "epoch": 1000,
                 "batch_size": 64,  # 20
                 "regularizer_type": "l1",  # l1, l2, l1_l2
-                "l": 0.001, # lambda value for l1 regularization, lambda for l2 and l1_l2 can be set equally as well
+                "l": 0.001,  # lambda value for l1 regularization, lambda for l2 and l1_l2 can be set equally as well
                 "FYI": "The saved model is the best model according to the lowest validation loss during training.",
                 "VarianceThreshold": var_thresholding,
                 "variance_threshold": var_threshold,
@@ -216,11 +219,13 @@ def main(
                     config.hidden_layers_size,
                     activation=config.activation,
                     kernel_initializer=config.kernel_initializer,
-                    kernel_regularizer=set_regularizer(config.regularizer_type, config.l),
+                    kernel_regularizer=set_regularizer(
+                        config.regularizer_type, config.l
+                    ),
                 )
             )
             model.add(Dropout(config.dropout))
-        
+
         model.add(
             Dense(1)
         )  # , activation = 'linear', kernel_initializer='GlorotUniform'))#, activation="relu"))
@@ -282,10 +287,8 @@ def main(
 
         # Predict the validation set results
         y_pred = model.predict(X_val)
-        # y_pred = target_scaler.inverse_transform(y_pred)
 
         # Calculate validation RMSE and validation R2 score, save them to wandb
-        # y_val = target_scaler.inverse_transform(y_val)
         rmse = root_mean_squared_error(y_val, y_pred)
         r2 = r2_score(y_val, y_pred)
         mae = mean_absolute_error(y_val, y_pred)
@@ -303,8 +306,6 @@ def main(
 
         # Calculate test RMSE and test R2 score, save them to wandb
         y_test_pred = model.predict(X_test)
-        # y_test_pred = target_scaler.inverse_transform(y_test_pred)
-        # y_test = target_scaler.inverse_transform(y_test)
         predicted_values.append(y_test_pred)
         test_rmse = root_mean_squared_error(y_test, y_test_pred)
         test_r2 = r2_score(y_test, y_test_pred)
@@ -320,27 +321,6 @@ def main(
         wandb.log({"Actual vs Predicted Values for test set": plot1})
         wandb.log({"Residual Plot": plot2})
         wandb.log({"Actual and Predicted Values line plot": plot3})
-
-        """# Create SHAP explainer
-        explainer = shap.Explainer(model, X_test)
-        shap_values = explainer(X_test)
-        # Compute mean absolute SHAP values per feature
-        feature_importance = np.abs(shap_values.values).mean(axis=0)
-        # Save feature importance
-        np.save("shap_feature_importance.npy", feature_importance)
-        # Plot or print feature importance
-        shap.summary_plot(shap_values, X_test)"""
-
-        """# Plot histogram of model weights per layer
-        for layer in model.layers:
-            if hasattr(layer, 'weights') and layer.get_weights():
-                weights = layer.get_weights()[0]
-                plt.figure(figsize=(10, 6))
-                plt.hist(weights.flatten(), bins=50, alpha=0.75)
-                plt.title(f'Layer {layer.name} Weights Distribution')
-                plt.xlabel('Weight Value')
-                plt.ylabel('Frequency')
-                wandb.log({f'Layer {layer.name} Weights Distribution': plt})"""
 
         # print statements
         print(f"{'Metric':<20} {'Validation':<15} {'Test':<15}")
@@ -400,7 +380,7 @@ def main(
             "best_fold_rmse": best_fold_rmse,
         }
     )
-    wandb.save("Neural_Network.py") #save the script
+    wandb.save("Neural_Network.py")  # save the script
 
     histploty = plot_y_hist(y, y_train, y_test)
     wandb.log({"Histograms of y/y_train/y_test": histploty})
@@ -415,10 +395,16 @@ def main(
     wandb.log({"Plot of scaled X_test": scaledxtest})
     wandb.log({"Plot of unscaled X_test": unscaledxtest})
 
-    histplotheight = plot_height_hist(data.loc[:, "RightHandZ"].values, data.loc[:, "RightHandZ"].values[train_index], data.loc[:, "RightHandZ"].values[test_index])
+    histplotheight = plot_height_hist(
+        data.loc[:, "RightHandZ"].values,
+        data.loc[:, "RightHandZ"].values[train_index],
+        data.loc[:, "RightHandZ"].values[test_index],
+    )
     wandb.log({"Histogram of Height": histplotheight})
 
-    anglevsheight = plot_angle_vs_height(y, data.loc[:, "RightHandZ"].values, trial_ids, target)
+    anglevsheight = plot_angle_vs_height(
+        y, data.loc[:, "RightHandZ"].values, trial_ids, target
+    )
     wandb.log({"Angle vs Height": anglevsheight})
 
     wandb.finish()

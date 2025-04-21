@@ -4,7 +4,9 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 import pandas as pd
 from fun import *
 
-fileName='Data/241212_Dataset_Leopard24_IMU.csv'
+#fileName='Data/241212_Dataset_Leopard24_IMU.csv'
+#fileName='Data/250312_Dataset_Pferd12.csv'
+fileName='Data/250318_Dataset_Eule3.csv'
 data = pd.read_csv(fileName, sep=",")
 
 #fig=plot_angle_vs_height(data.loc[:,'ElbowAngle'].values, data.loc[:, "RightHandZ"].values, data.loc[:, "Trial_ID"].values, 'ElbowAngle')
@@ -64,5 +66,35 @@ def plot_trial_duration_express(data):
     )
     return fig
 
-fig = plot_trial_duration_express(data)
+def plot_trial_duration_1dhist(data):
+    #selection = (data.loc[:, "RightHandZ"] < 500)
+    #data = data.loc[selection]
+    trial_ids = data.loc[:, "Trial_ID"].values
+    
+    fig = go.Figure()
+    unique_trials = np.unique(trial_ids)
+    
+    lengths = []
+    for trial_id in unique_trials:
+        mask = trial_ids == trial_id
+        lengths.append(trial_ids[mask].shape[0])
+    fig.add_trace(go.Histogram(
+        x=lengths,
+        nbinsx=30,
+        marker=dict(color='blue'),
+    ))
+    fig.update_layout(
+        xaxis_title="Drilling Duration",
+        yaxis_title="Count",
+        title=f"Histogram of Drilling Duration", #Plot der Höhe gegen den {zielvariable}
+        title_font=dict(size=30),
+        xaxis=dict(title_font=dict(size=30), tickfont=dict(size=30)),
+        yaxis=dict(title_font=dict(size=30), tickfont=dict(size=30)),
+    )
+
+    average = np.mean(lengths)
+    print(f"Average drilling duration: {average}")
+    return fig
+
+fig = plot_trial_duration_1dhist(data)
 fig.show()

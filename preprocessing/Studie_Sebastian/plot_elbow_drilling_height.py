@@ -1,4 +1,3 @@
-import pandas as pd
 import plotly.graph_objects as go
 import preprocessing.Studie_Sebastian.seb_xsens as seb_xsens
 import colorcet as cc

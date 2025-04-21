@@ -1,3 +1,4 @@
+#this file contains functions that are used in preprocessing and postprocessing steps during model training and evaluation
 import scipy.io
 import glob
 import pandas as pd
@@ -8,35 +9,7 @@ import plotly.graph_objects as go
 import colorcet as cc
 from sklearn.preprocessing import StandardScaler, MinMaxScaler, RobustScaler, QuantileTransformer
 
-
-def load_data(userinput=None):
-    while True:
-        try:
-            if userinput is None:
-                userinput = input(
-                    "Enter the name of the file you want to create a model for : "
-                )
-            # Load the .mat file
-            mat_file = glob.glob("**/" + str(userinput) + ".mat", recursive=True)
-            if len(mat_file) > 1:
-                raise ValueError("Multiple files found")
-
-            mat = scipy.io.loadmat(mat_file[0])
-            # Print the keys of the dictionary
-            # print(mat.keys())
-            # Assuming the data is stored in a variable named 'data' in the .mat file
-            data = mat["learnerMatrix"]
-            # Convert the data to a pandas DataFrame
-            df = pd.DataFrame(data)
-            return df, userinput
-        except FileNotFoundError:
-            print("File not found")
-            pass
-        except ValueError:
-            print("Invalid input")
-            pass
-
-
+#this sets the optimizer for the model with standard parameters if none are provided
 def set_optimizer(optimizer, learning_rate=0.001, beta_1=0.9, beta_2=0.999):
     optimizer = optimizer.lower().strip()
     if optimizer == "adam":
@@ -68,7 +41,7 @@ def set_optimizer(optimizer, learning_rate=0.001, beta_1=0.9, beta_2=0.999):
     else:
         raise ValueError("Invalid optimizer")
 
-
+#this sets the regularizer for the model with standard parameters if none are provided
 def set_regularizer(regularizer, l1=0.01, l2=0.01):
     regularizer = regularizer.lower().strip()
     if regularizer == "l1":
@@ -79,7 +52,8 @@ def set_regularizer(regularizer, l1=0.01, l2=0.01):
         return tf.keras.regularizers.L1L2(l1, l2)
     else:
         raise ValueError("Invalid regularizer")
-    
+
+#this sets the standardizer for the model 
 def set_standardizer(standardizer): #add more if you want
     standardizer = standardizer.lower().strip()
     if standardizer == "standardscaler":
@@ -93,7 +67,7 @@ def set_standardizer(standardizer): #add more if you want
     else:
         raise ValueError("Invalid standardizer")
 
-
+#this checks if the data is split correctly and if there is no data leakage between the training and test sets or between the training and validation sets
 def data_leakage(trial_ids, train_index, test_index):
     train_trials = set(trial_ids[train_index])
     test_trials = set(trial_ids[test_index])
@@ -103,9 +77,8 @@ def data_leakage(trial_ids, train_index, test_index):
             f"Trial leakage detected between train and test sets for trials: {common_trials}"
         )
 
-
+#this function plots the results of the models and compares them to the ground truth values
 def plot_y(y_true, y_pred, trial_ids_test, target):
-
     if target == "WristAngle":
         zielvariable = "Handgelenkwinkel"
         target = "Wrist Angle"
@@ -128,6 +101,7 @@ def plot_y(y_true, y_pred, trial_ids_test, target):
             f"Number of unique trials {len(unique_trials)} exceeds the number of available colors {len(colors)}. Not all plots will be drawn. Adjust colormap accordingly."
         )
 
+    ################## Plot y_pred and y_test as a line plot for the test set ###################
     fig1 = go.Figure()
     for trial_id, color in zip(unique_trials, colors):
         # Mask to select data points for the current trial
@@ -160,7 +134,7 @@ def plot_y(y_true, y_pred, trial_ids_test, target):
         yaxis=dict(title_font=dict(size=30), tickfont=dict(size=30)),
     )
 
-    # Plot a residual plot
+    ################# Plot residuals (y_pred - y_true) as a scatter plot ###################
     fig2 = go.Figure()
     for trial_id, color in zip(unique_trials, colors):
         # Mask to select data points for the current trial
@@ -193,8 +167,7 @@ def plot_y(y_true, y_pred, trial_ids_test, target):
         yaxis=dict(title_font=dict(size=30), tickfont=dict(size=30)),
     )
 
-
-    # plot y_true and y_pred as a line plot
+    ################### Plot y_true and y_pred as a line plot ###################
     fig3 = go.Figure()
     for trial_id, color in zip(unique_trials, colors):
         # Mask to select data points for the current trial
@@ -228,7 +201,7 @@ def plot_y(y_true, y_pred, trial_ids_test, target):
 
     return fig1, fig2, fig3
 
-
+#this function plots a histogram of the target variable for the whole data, train and test.
 def plot_y_hist(y, y_train, y_test):
     fig = go.Figure()
     fig.add_trace(go.Histogram(x=y, name="y"))
@@ -245,6 +218,7 @@ def plot_y_hist(y, y_train, y_test):
     fig.update_traces(opacity=0.5)
     return fig
 
+#this function plots a histogram of the height variable for the whole data, train and test.
 def plot_height_hist(height, height_train, height_test):
     fig = go.Figure()
     fig.add_trace(go.Histogram(x=height, name="height"))
@@ -264,6 +238,7 @@ def plot_height_hist(height, height_train, height_test):
     fig.update_traces(opacity=0.5)
     return fig
 
+#this function plots the height vs the target variable
 def plot_angle_vs_height(y, height, trial_ids, target):
     if target == "WristAngle":
         zielvariable = "Handgelenkwinkel"
@@ -304,6 +279,7 @@ def plot_angle_vs_height(y, height, trial_ids, target):
     )
     return fig
 
+#this function plots the data before and after scaling
 def plot_x_scaler(x, x_train, x_test, scaler):
     fig1 = go.Figure()
     for i in range(x.shape[1]):
@@ -357,6 +333,7 @@ def plot_x_scaler(x, x_train, x_test, scaler):
 
     return fig1, fig2, fig3, fig4, fig5
 
+#this function adds a trial identifier to the data, which can optionally be used as additional input to the model
 def addtrialidentifier(X, trial_ids):
     # Convert trial IDs to integer indices
     unique_trials = np.unique(trial_ids)
@@ -372,6 +349,7 @@ def addtrialidentifier(X, trial_ids):
 
     return X_combined
 
+#this function adds white noise to the data, which can be used to simulate sensor noise
 def whitenoise(X, db):
     features = X[:, :-3] #sensels
     calculated_features = X[:, -3:] #sensor mean, total load, activated sensels
