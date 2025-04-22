@@ -82,7 +82,7 @@ plotfilepath = 'Data/Post_Processing_Data/plots'
 target = 'ElbowAngle' # only for Split Files to filter out the correct target, currently only the 'ElbowAngle' is used
 ymax=20 #20 for RMSE and MAE, 1 for R2 score
 
-plot_white_noise(datawnnn, datawnsgpr,datann, datasgpr, metric, vtb, plotfilepath, target, ymax) #comment out if not needed
+#plot_white_noise(datawnnn, datawnsgpr,datann, datasgpr, metric, vtb, plotfilepath, target, ymax) #comment out if not needed
 
 
 

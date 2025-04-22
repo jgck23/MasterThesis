@@ -33,6 +33,7 @@ hidden_layer_size=128 #only for NN, change the number of neurons in the hidden l
 #4 @ 128 for elbow angle
 #5 @ 128 for shoulder angle z
 
+# the settings of SGPR for the different participants and angles can be found in the .cvs-files from WandB and in the python files that are saved in the cross_valsummaries (Messdaten Server IPEK)
 learning_rate=0.01 # only for SGPR, change for NN in Neural_Network.py
 early_stopping_patience=35 # only for SGPR, change for NN in Neural_Network.py !!!line 273 in sgpr_torch.py: mechanism to adjust this value dynamically when more than 50 epochs are trained!!! (to reduce training time)
 early_stopping_minimum_delta = 2e-2 # only for SGPR, change for NN in Neural_Network.py
