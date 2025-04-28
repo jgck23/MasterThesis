@@ -569,7 +569,7 @@ def plot_comparison_nnspgr(
                     showlegend=False,
                     marker_color=color,
                     line=dict(width=4),
-                    boxmean="sd",
+                    #boxmean="sd",
                 )
             )
             fig.add_trace(
@@ -584,7 +584,7 @@ def plot_comparison_nnspgr(
                     showlegend=False,
                     marker_color=color,
                     line=dict(width=4),
-                    boxmean="sd",
+                    #boxmean="sd",
                 )
             )
 

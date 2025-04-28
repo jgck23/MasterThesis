@@ -1,0 +1,18 @@
+Performing manual labor with power tools such as a hammer drill places workers at elevated risk of musculoskeletal disorders (MSDs), especially when tasks require sustained awkward postures or repeated motions. Traditional monitoring approaches - camera‑based systems with proprietary tracking software, optical or inertial motion capture setups, and direct human observation - either intrude upon the work environment or fail under limited visibility. A recent proof‑of‑concept study leveraged Gaussian process regression (GPR) to infer arm joint angles from pressure data collected via a sensor integrated drill handle. The study achieved an average RMSE of 10.7° while exhibiting high variance across participants. Therefore, this study investigates whether a deep neural network (DNN) can deliver more accurate and robust posture predictions while remaining minimally intrusive. High-resolution pressure data were recorded from a sensor matrix mounted on a cordless drill and synchronized with a motion capture system measuring ground truth data for wrist, elbow, and shoulder angles. Both, a parametric DNN and a non‑parametric GPR model were trained to predict those angles, with systematic variations in (1) splitting training and testing data, (2) total number of drilling trials, (3) amount of data per drilling trial, and (4) simulated sensor noise levels. In direct comparison, the DNN reduced the mean test RMSE by up to 33% relative to GPR, tightened error distributions, and maintained strong resilience to added white noise. Attempts at chained angle prediction yielded participant‑specific benefits, suggesting that future work should explore architectures that capture temporal dependencies. The results demonstrate that DNNs offer a superior combination of predictive performance, robustness, and computational efficiency for ergonomic posture assessment using embedded pressure sensors and provide a clear pathway toward intelligent, injury‑preventive power tools.
+
+The Prediction works as follows:
+-main.py is used to train the DNN and SGPR and then test with the trained models (Comprises experiments: train-test split, number of trials, data per trial, white noise). The main file calls Neural_Network.py and sgpr_torch.py for model training. Both of those files use some functions in fun.py for data loading/preprocessing and for generating plots after training. 
+-Chained_NN_main.py is used to train the DNN in the chained version. It calls Neural_Network_ChainedVersion.py
+
+Folder preprocessing:
+comb_forcesensor_xsens.py calls sensor_data.py and xsens_data.py to to merge all Tekscan .csv and Xsens .csv files together in one dataset that can be used for model training and testing.
+
+Folder postprocessing:
+-pp.py is used to generate plotly plots from the .csv data from WandB (aka the logged metrics). It calls several functions from pfun.py.
+-copy_WandB_Runs.py is used to copy Runs from one WandB project to another since the web interface does not have that functionality
+-export_CSV_From_WandB.py is used to generate a results .csv file from all logged metrics under a WandB project. Has to be used when the number of runs exceeds 1000 since the export function from the web interface does not allow for more. 
+-save_WandB_files.py is used to download all files from the runs to local folders for backup purposes
+-PP_PredVsTrue_JSON.py is used to make adjustments to the Pred vs True Scatter Plot that gets uploaded to WandB when testing the models.
+-Heatmap_Hist_Duration_Height.py is used for heatmap and histogram plots from the datasets from the different participants. 
+
+The packages that were used in this project are listed in the requirements.txt.

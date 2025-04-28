@@ -7,6 +7,9 @@ CNN.py
 .DS_Store
 /wandb
 /_archive
+barchart.py
+andererplot.py
+jp.py
 
 # Ignore data files
 *.mat

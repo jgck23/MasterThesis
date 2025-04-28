@@ -9,7 +9,7 @@ with open('avsp.json', 'r') as file:
 # Create your original figure from the JSON data.
 fig = go.Figure(data=data['data'], layout=data['layout'])
 
-# Define the range and compute y-values for the filled area between y = x + 5.79 and y = x - 5.79.
+'''# Define the range and compute y-values for the filled area between y = x + 5.79 and y = x - 5.79.
 x_values = list(range(41, 131))
 y1_values = [x + 5.79 for x in x_values]
 y2_values = [x - 5.79 for x in x_values]
@@ -102,8 +102,9 @@ background_traces.extend(red_background_trace)
 combined_traces = background_traces + list(fig.data)
 
 # Create a new figure with the combined traces and the existing layout.
-fig_updated = go.Figure(data=combined_traces, layout=fig.layout)
+fig_updated = go.Figure(data=combined_traces, layout=fig.layout)'''
 
+fig_updated = fig
 # Optionally, update additional layout settings as before.
 fig_updated.update_layout(showlegend=False)
 fig_updated.update_layout(
