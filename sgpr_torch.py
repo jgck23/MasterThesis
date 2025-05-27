@@ -180,13 +180,6 @@ def main(
     )  # train and val tensors are handeled below
     y_test = torch.tensor(y_test, dtype=torch.float64)
 
-    # Early Stopping Configuration
-    early_stopping_patience = earlystoppingpatience
-    miniumum_delta = miniumimprovement
-    best_val_loss = float("inf")
-    patience_counter = 0
-    initial_patience = early_stopping_patience
-
     gkf = GroupKFold(n_splits=n_cross_val)
     fold = 1
     val_losses = []
@@ -264,6 +257,9 @@ def main(
         mll = gpytorch.mlls.ExactMarginalLogLikelihood(likelihood, model)
 
         # Early Stopping Initialization
+        early_stopping_patience = earlystoppingpatience
+        miniumum_delta = miniumimprovement
+        initial_patience = early_stopping_patience
         best_val_loss = float("inf")
         patience_counter = 0
 

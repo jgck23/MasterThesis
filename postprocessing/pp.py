@@ -3,13 +3,13 @@ from pfun import *
 import pandas as pd 
 
 ##############         TRIALNUM/DEPTH        ##############
-#filenamenn='Data/Post_Processing_Data/241212_Leopard24_Depth_NN.csv'
-#filenamesgpr='Data/Post_Processing_Data/241212_Leopard24_Depth_SGPR.csv'
+filenamenn='Data/Post_Processing_Data/241212_Leopard24_Resampled_Depth_NN.csv'
+filenamesgpr='Data/Post_Processing_Data/241212_Leopard24_Resampled_Depth_SGPR.csv'
 #filenamenn='Data/Post_Processing_Data/241212_Leopard24_TrialNum_NN.csv'
 #filenamesgpr='Data/Post_Processing_Data/241212_Leopard24_TrialNum_SGPR.csv'
 
-filenamenn='Data/Post_Processing_Data/250312_Pferd12_Depth_NN.csv'
-filenamesgpr='Data/Post_Processing_Data/250312_Pferd12_Depth_SGPR.csv'
+#filenamenn='Data/Post_Processing_Data/250312_Pferd12_Depth_NN.csv'
+#filenamesgpr='Data/Post_Processing_Data/250312_Pferd12_Depth_SGPR.csv'
 #filenamenn='Data/Post_Processing_Data/250312_Pferd12_TrialNum_NN.csv'
 #filenamesgpr='Data/Post_Processing_Data/250312_Pferd12_TrialNum_SGPR.csv'
 
@@ -30,16 +30,16 @@ plotfilepath = 'Data/Post_Processing_Data/plots' # path to save the plots
 mode = 'Depth' # Number of Trials, Depth
 valtestboth = 'test' # validation, test, both (plots only the test or validation metric data or both, eg. compare the test and validation RMSE)
 polydegree = 3 # polynomial degree for the fit
-target = 'ElbowAngle' # WristAngle, ElbowAngle, ShoulderAngleZ, only one target
-y_max = 40 # y axis max value, 20 for wrist and 40 for elbow and shoulder
+target = 'WristAngle' # WristAngle, ElbowAngle, ShoulderAngleZ, only one target
+y_max = 20 # y axis max value, 20 for wrist and 40 for elbow and shoulder
 avg = False # True: Plot only one average value for every x step, False: Plot all 50 values for every x step
 offset = True # True: Offset markers for DNN and SGPR for no overlapping, False: No offset
 plotdeptharea =False #Plot green background area for the minium required depth
 depthareastart=30 #manually set the start of the area in %, e.g. 30% of the depth
 plottrialnumimprovement = False #Plot two dashed lines for the improvement of the DNN
-absoluteaxis = False #True: Absolute axis for the x axis, for Number of Trials: Number of Trials on the x axis, for Depth: Time in [s] on the x axis, False: Relative axis for the x axis, for Number of Trials: Number of Trials in % on the x axis, for Depth: Depth in % on the x axis
+absoluteaxis = True #True: Absolute axis for the x axis, for Number of Trials: Number of Trials on the x axis, for Depth: Time in [s] on the x axis, False: Relative axis for the x axis, for Number of Trials: Number of Trials in % on the x axis, for Depth: Depth in % on the x axis
 
-#plot_ntrials_depth(datann, datasgpr, metric, valtestboth, model, mode, polydegree,plotfilepath, target, y_max, avg, offset, plotdeptharea, depthareastart, plottrialnumimprovement, absoluteaxis) #comment out if not needed
+plot_ntrials_depth(datann, datasgpr, metric, valtestboth, model, mode, polydegree,plotfilepath, target, y_max, avg, offset, plotdeptharea, depthareastart, plottrialnumimprovement, absoluteaxis) #comment out if not needed
 
 ###########################   SPLIT   ############################
 # Note: Can also be used to compare the Split of any participant with the Chained Results of the same participant 
@@ -58,7 +58,7 @@ target = ['WristAngle','ElbowAngle','ShoulderAngleZ'] # WristAngle, ElbowAngle, 
 ymax=20 #20 for RMSE and MAE, 1 for R2 score
 show_img_background = True #True: Show the background image, False: No background image
 
-plot_comparison_nnspgr(datann, datasgpr, metric, vtb, plotfilepath, target, ymax, show_img_background) #comment out if not needed
+#plot_comparison_nnspgr(datann, datasgpr, metric, vtb, plotfilepath, target, ymax, show_img_background) #comment out if not needed
 
 ####################       WHITE NOISE     #####################
 fileWhiteNoiseNN='Data/Post_Processing_Data/241212_Leopard24_WhiteNoise_NN.csv'

@@ -8,7 +8,7 @@ api = wandb.Api()
 
 # Replace with your entity (username or team) and project name
 entity = "ursja-karlsruhe-institute-of-technology"
-project = "250318_Eule3_TrialNum_SGPR"
+project = "241212_Leopard24_Resampled_Depth_SGPR"  
 
 # Get all runs in the project
 runs = api.runs(f"{entity}/{project}")
@@ -40,4 +40,4 @@ for run in runs:
 df = pd.DataFrame(run_data)
 
 # Save to CSV
-df.to_csv("250318_Eule3_TrialNum_SGPR.csv", index=False)
+df.to_csv("241212_Leopard24_Resampled_Depth_SGPR.csv", index=False)

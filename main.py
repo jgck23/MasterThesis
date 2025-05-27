@@ -2,21 +2,21 @@
 import Neural_Network as nn
 import sgpr_torch as sgpr
 
-path='Data/250318_Dataset_Eule3.csv' #specify the path to the dataset
+path='Data/250318_Dataset_Eule3_Resampled.csv' #specify the path to the dataset
 
 ############### EXPERIMENT NAME FOR WANDB LOGGING ################
 #project_name='241212_Leopard24_TrialNum' # checking for the influence of the number of trials
-#project_name='241212_Leopard24_Depth' #checking for the influence of the drilling depth relative for every trial
+#project_name='241212_Leopard24_Resampled_Depth' #checking for the influence of the drilling depth relative for every trial
 #project_name='241212_Leopard24_Split' # checking for the influence of the split of the data
 #project_name='241212_Leopard24_WhiteNoise'
 
 #project_name='250312_Pferd12_TrialNum'
-#project_name='250312_Pferd12_Depth'
+#project_name='250312_Pferd12_Resampled_Depth'
 #project_name='250312_Pferd12_Split'
 #project_name='250312_Pferd12_WhiteNoise'
 
-project_name='250318_Eule3_TrialNum'
-#project_name='250318_Eule3_Depth'
+#project_name='250318_Eule3_TrialNum'
+project_name='250318_Eule3_Resampled_Depth'
 #project_name='250318_Eule3_Split'
 #project_name = '250318_Eule3_WhiteNoise' 
 
@@ -26,19 +26,19 @@ project_name_sgpr = project_name + '_SGPR' #for the SGPR the project name is aut
 model_type='SGPR' 
 #model_type='NN'
 
-target='WristAngle' # WristAngle, ElbowAngle, ShoulderAngleZ (flexion/extension), ShoulderAngleX (abduction/adduction)
-hidden_layer_num=4 # only for NN, change the number of hidden layers
+target='ShoulderAngleZ' # WristAngle, ElbowAngle, ShoulderAngleZ (flexion/extension), ShoulderAngleX (abduction/adduction)
+hidden_layer_num=5 # only for NN, change the number of hidden layers
 hidden_layer_size=128 #only for NN, change the number of neurons in the hidden layers
 #3 @ 64 for wrist angle
 #4 @ 128 for elbow angle
 #5 @ 128 for shoulder angle z
 
 # the settings of SGPR for the different participants and angles can be found in the .cvs-files from WandB and in the python files that are saved in the cross_valsummaries (Messdaten Server IPEK)
-learning_rate=0.01 # only for SGPR, change for NN in Neural_Network.py
-early_stopping_patience=35 # only for SGPR, change for NN in Neural_Network.py !!!line 273 in sgpr_torch.py: mechanism to adjust this value dynamically when more than 50 epochs are trained!!! (to reduce training time)
+learning_rate=0.18 # only for SGPR, change for NN in Neural_Network.py
+early_stopping_patience=20 # only for SGPR, change for NN in Neural_Network.py !!!line 273 in sgpr_torch.py: mechanism to adjust this value dynamically when more than 50 epochs are trained!!! (to reduce training time)
 early_stopping_minimum_delta = 2e-2 # only for SGPR, change for NN in Neural_Network.py
 max_epochs= 100 # only for SGPR, change for NN in Neural_Network.py
-learning_rate_scheduler_patience = 12 # only for SGPR, change for NN in Neural_Network.py, after the patience the learning rate is halved
+learning_rate_scheduler_patience = 8 # only for SGPR, change for NN in Neural_Network.py, after the patience the learning rate is halved
 
 ################# ADDITIONAL PARAMETERS AND PREPROCESSING STEPS ################
 add_propsensor_features=False # optionally add the features from the propsensor of the hammer drill
@@ -60,8 +60,8 @@ random_states=[0,11,22,33,44,55,66,77,88,99]# any int in the range: [0, 2**32 - 
 decrease_trials=False
 decrease_trials_sizes= [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0] 
 
-decrease_duration=False
-decrease_duration_sizes= [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
+decrease_duration=True
+decrease_duration_sizes= [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 1.0]
 
 add_white_noise=False
 snr=30 #dB >30 almost no influence, 15-30 low noise, 5-15 high noise, <5 very high noise
